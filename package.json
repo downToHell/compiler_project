@@ -1,0 +1,17 @@
+{
+  "name": "compiler_project",
+  "version": "1.0.0",
+  "description": "A simple compiler written for the CSM14204 compiler project",
+  "main": "main.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha.js test/"
+  },
+  "author": "Thomas Thaler",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "mocha": "^10.2.0"
+  }
+}
