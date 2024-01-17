@@ -99,13 +99,31 @@ function Tokenizer(inp, options){
         }
         return buf
     }
-    const skipComment = () => {
+    const skipSingleLineComment = () => {
         let ch
 
         while (!isEOF() && (ch = peek()) != '\r' && ch != '\n'){
             advance()
         }
         return this.nextToken()
+    }
+    const skipMultiLineComment = () => {
+        let ch, prev
+
+        while (!isEOF() && (ch = peek()) != '/' && prev != '*'){
+            prev = ch
+            advance()
+        }
+        advance()
+        return this.nextToken()
+    }
+    const handleDivToken = (ch) => {
+        if (consume(TokenType.DIV)){
+            return skipSingleLineComment()
+        } else if (consume(TokenType.MUL)){
+            return skipMultiLineComment()
+        }
+        return makeToken(ch)
     }
     const isKeyword = (str) => keywords[str]
 
@@ -135,8 +153,8 @@ function Tokenizer(inp, options){
             case TokenType.COLON:
             case TokenType.SEMICOLON:
                 return makeToken(ch)
-            case TokenType.DIV: return consume(TokenType.DIV) ? skipComment() : makeToken(ch)
-            case TokenType.HASHTAG: return skipComment()
+            case TokenType.DIV: return handleDivToken(ch)
+            case TokenType.HASHTAG: return skipSingleLineComment()
             case TokenType.LT: return consume(TokenType.EQ) ? makeToken(TokenType.LE) : makeToken(ch)
             case TokenType.GT: return consume(TokenType.EQ) ? makeToken(TokenType.GE) : makeToken(ch)
             case TokenType.EQ: return consume(TokenType.EQ) ? makeToken(TokenType.EQ_EQ) : makeToken(ch)

@@ -118,6 +118,16 @@ describe('Tokenizer tests', function(){
         ])
     })
 
+    it('skips multi-line comments', function(){
+        const scn = new Tokenizer('/* This is a comment\n that is supposed\n to span\n multiple lines */ a + b', opt)
+
+        assert.deepStrictEqual(scn.tokens(), [
+            makeToken('a', TokenType.IDENTIFIER),
+            makeToken('+', TokenType.PLUS),
+            makeToken('b', TokenType.IDENTIFIER)
+        ])
+    })
+
     it('skips whitespace', function(){
         const scn = new Tokenizer('  4 + 5  _myVar  ', opt)
 
