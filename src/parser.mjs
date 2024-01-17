@@ -16,8 +16,6 @@ function Parser(tokens){
         return token
     }
     const match = (...types) => {
-        if (peek().type === TokenType.END) return false
-
         for (const type of types){
             if (peek().type === type){
                 return true
@@ -33,7 +31,9 @@ function Parser(tokens){
     }
 
     this.parseExpression = function(){
-        return this.parseAdditiveExpression()
+        let expr = this.parseAdditiveExpression()
+        consume(TokenType.END, `EOF expected, got ${peek().type}`)
+        return expr
     }
     this.parseAdditiveExpression = function(){
         let left = this.parseMultiplicativeExpression()
@@ -77,7 +77,7 @@ function Parser(tokens){
     }
     this.parseGroup = function(){
         consume(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
-        const expr = this.parseExpression()
+        const expr = this.parseAdditiveExpression()
         consume(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
         return new Grouping(expr)
     }
