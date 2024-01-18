@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { Parser } from "../src/parser.mjs"
 import { Tokenizer } from "../src/tokenizer.mjs"
-import { BinaryExpr, Grouping, Identifier, Literal, UnaryExpr } from '../src/ast.mjs'
+import { BinaryExpr, Grouping, Identifier, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
 
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
@@ -102,6 +102,20 @@ describe('Parser tests', function(){
         assert.ok(expr.right.right instanceof Identifier)
         assert.strictEqual(expr.op, '+')
         assert.strictEqual(expr.right.op, '*')
+        assert.strictEqual(expr.left.name, 'a')
+        assert.strictEqual(expr.right.left.name, 'b')
+        assert.strictEqual(expr.right.right.name, 'c')
+    })
+
+    it('accepts logical expressions', function(){
+        let parser = makeParser('a or b and c')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof LogicalExpr)
+        assert.ok(expr.left instanceof Identifier)
+        assert.ok(expr.right instanceof LogicalExpr)
+        assert.strictEqual(expr.op, 'or')
+        assert.strictEqual(expr.right.op, 'and')
         assert.strictEqual(expr.left.name, 'a')
         assert.strictEqual(expr.right.left.name, 'b')
         assert.strictEqual(expr.right.right.name, 'c')

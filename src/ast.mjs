@@ -12,6 +12,12 @@ export function BinaryExpr(left, op, right){
     this.right = right
 }
 
+export function LogicalExpr(left, op, right){
+    this.left = left
+    this.op = op
+    this.right = right
+}
+
 export function UnaryExpr(right, op){
     this.right = right
     this.op = op

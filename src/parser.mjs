@@ -1,5 +1,5 @@
 import { EOF, TokenType } from './tokenizer.mjs'
-import { BinaryExpr, Grouping, Identifier, Literal, UnaryExpr } from './ast.mjs'
+import { BinaryExpr, Grouping, Identifier, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
 
 function Parser(tokens){
     let pos = 0
@@ -31,9 +31,31 @@ function Parser(tokens){
     }
 
     this.parseExpression = function(){
-        let expr = this.parseAdditiveExpression()
+        const expr = this.parseOrExpression()
         consume(TokenType.END, `EOF expected, got ${peek().type}`)
         return expr
+    }
+    this.parseOrExpression = function(){
+        let left = this.parseAndExpression()
+
+        while (match(TokenType.OR)){
+            const op = advance()
+            const right = this.parseAndExpression()
+
+            left = new LogicalExpr(left, op.value, right)
+        }
+        return left
+    }
+    this.parseAndExpression = function(){
+        let left = this.parseAdditiveExpression()
+
+        while (match(TokenType.AND)){
+            const op = advance()
+            const right = this.parseAdditiveExpression()
+
+            left = new LogicalExpr(left, op.value, right)
+        }
+        return left
     }
     this.parseAdditiveExpression = function(){
         let left = this.parseMultiplicativeExpression()
