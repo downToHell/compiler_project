@@ -47,9 +47,31 @@ function Parser(tokens){
         return left
     }
     this.parseAndExpression = function(){
-        let left = this.parseAdditiveExpression()
+        let left = this.parseEquality()
 
         while (match(TokenType.AND)){
+            const op = advance()
+            const right = this.parseEquality()
+
+            left = new LogicalExpr(left, op.value, right)
+        }
+        return left
+    }
+    this.parseEquality = function(){
+        let left = this.parseComparison()
+
+        while (match(TokenType.EQ_EQ, TokenType.NE)){
+            const op = advance()
+            const right = this.parseComparison()
+
+            left = new LogicalExpr(left, op.value, right)
+        }
+        return left
+    }
+    this.parseComparison = function(){
+        let left = this.parseAdditiveExpression()
+
+        while (match(TokenType.GT, TokenType.GE, TokenType.LT, TokenType.LE)){
             const op = advance()
             const right = this.parseAdditiveExpression()
 
