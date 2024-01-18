@@ -49,7 +49,7 @@ function Parser(tokens){
     this.parseMultiplicativeExpression = function(){
         let left = this.parseUnaryExpression()
 
-        while (match(TokenType.MUL, TokenType.DIV)){
+        while (match(TokenType.MUL, TokenType.DIV, TokenType.MOD)){
             const op = advance()
             const right = this.parseUnaryExpression()
 
@@ -58,9 +58,9 @@ function Parser(tokens){
         return left
     }
     this.parseUnaryExpression = function(){
-        if (match(TokenType.MINUS)){
+        if (match(TokenType.MINUS, TokenType.NOT)){
             const op = advance()
-            const right = this.parseFactor()
+            const right = this.parseUnaryExpression()
             return new UnaryExpr(right, op.value)
         }
         return this.parseFactor()

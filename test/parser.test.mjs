@@ -79,6 +79,18 @@ describe('Parser tests', function(){
         assert.strictEqual(expr.right.value, 5)
     })
 
+    it('accepts double negation', function(){
+        let parser = makeParser('--8')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof UnaryExpr)
+        assert.ok(expr.right instanceof UnaryExpr)
+        assert.ok(expr.right.right instanceof Literal)
+        assert.strictEqual(expr.op, '-')
+        assert.strictEqual(expr.right.op, '-')
+        assert.strictEqual(expr.right.right.value, 8)
+    })
+
     it('accepts identifiers in arithmetic op', function(){
         let parser = makeParser('a + b * c')
         let expr = parser.parseExpression()
