@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { Parser } from "../src/parser.mjs"
 import { Tokenizer } from "../src/tokenizer.mjs"
-import { BinaryExpr, Grouping, Identifier, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
+import { Assignment, BinaryExpr, Grouping, Identifier, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
 
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
@@ -139,5 +139,25 @@ describe('Parser tests', function(){
         assert.strictEqual(expr.left.right.name, 'b')
         assert.strictEqual(expr.right.left.name, 'b')
         assert.strictEqual(expr.right.right.name, 'c')
+    })
+
+    it('accepts assignment expression', function(){
+        let parser = makeParser('x = 3 + 5')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof Assignment)
+        assert.ok(expr.target instanceof Identifier)
+        assert.ok(expr.expr instanceof BinaryExpr)
+        assert.ok(expr.expr.left instanceof Literal)
+        assert.ok(expr.expr.right instanceof Literal)
+        assert.strictEqual(expr.target.name, 'x')
+        assert.strictEqual(expr.expr.op, '+')
+        assert.strictEqual(expr.expr.left.value, 3)
+        assert.strictEqual(expr.expr.right.value, 5)
+    })
+
+    it('rejects invalid assignment', function(){
+        let parser = makeParser('3 = 5')
+        assert.throws(() => parser.parseExpression())
     })
 })

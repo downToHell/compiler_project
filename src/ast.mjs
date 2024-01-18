@@ -26,3 +26,8 @@ export function UnaryExpr(right, op){
 export function Grouping(expr){
     this.expr = expr
 }
+
+export function Assignment(target, expr){
+    this.target = target
+    this.expr = expr
+}

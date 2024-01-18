@@ -1,5 +1,5 @@
 import { EOF, TokenType } from './tokenizer.mjs'
-import { BinaryExpr, Grouping, Identifier, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
+import { Assignment, BinaryExpr, Grouping, Identifier, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
 
 function Parser(tokens){
     let pos = 0
@@ -31,8 +31,22 @@ function Parser(tokens){
     }
 
     this.parseExpression = function(){
-        const expr = this.parseOrExpression()
+        const expr = this.parseAssignment()
         consume(TokenType.END, `EOF expected, got ${peek().type}`)
+        return expr
+    }
+    this.parseAssignment = function(){
+        const expr = this.parseOrExpression()
+
+        if (match(TokenType.EQ)){
+            advance()
+            const value = this.parseAssignment()
+
+            if (expr instanceof Identifier){
+                return new Assignment(expr, value)
+            }
+            throw new Error('Invalid assignment target!')
+        }
         return expr
     }
     this.parseOrExpression = function(){
@@ -121,7 +135,7 @@ function Parser(tokens){
     }
     this.parseGroup = function(){
         consume(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
-        const expr = this.parseAdditiveExpression()
+        const expr = this.parseAssignment()
         consume(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
         return new Grouping(expr)
     }
