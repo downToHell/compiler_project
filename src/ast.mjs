@@ -31,3 +31,9 @@ export function Assignment(target, expr){
     this.target = target
     this.expr = expr
 }
+
+export function IfExpr(cond, body, elsz){
+    this.cond = cond
+    this.body = body
+    this.elsz = elsz
+}

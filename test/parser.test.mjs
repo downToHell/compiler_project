@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { Parser } from "../src/parser.mjs"
 import { Tokenizer } from "../src/tokenizer.mjs"
-import { Assignment, BinaryExpr, Grouping, Identifier, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
+import { Assignment, BinaryExpr, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
 
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
@@ -158,6 +158,37 @@ describe('Parser tests', function(){
 
     it('rejects invalid assignment', function(){
         let parser = makeParser('3 = 5')
+        assert.throws(() => parser.parseExpression())
+    })
+
+    it('accepts if expressions', function(){
+        let parser = makeParser('if a then b + c else x * y')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof IfExpr)
+        assert.ok(expr.cond instanceof Identifier)
+        assert.ok(expr.body instanceof BinaryExpr)
+        assert.ok(expr.elsz instanceof BinaryExpr)
+        assert.strictEqual(expr.cond.name, 'a')
+        assert.strictEqual(expr.body.op, '+')
+        assert.strictEqual(expr.body.left.name, 'b')
+        assert.strictEqual(expr.body.right.name, 'c')
+        assert.strictEqual(expr.elsz.op, '*')
+        assert.strictEqual(expr.elsz.left.name, 'x')
+        assert.strictEqual(expr.elsz.right.name, 'y')
+    })
+
+    it('treats else as optional', function(){
+        let parser = makeParser('if a then a + 5')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof IfExpr)
+        assert.ok(expr.cond instanceof Identifier)
+        assert.strictEqual(expr.elsz, undefined)
+    })
+
+    it('rejects assignment in if', function(){
+        let parser = makeParser('if a = b then x + y')
         assert.throws(() => parser.parseExpression())
     })
 })

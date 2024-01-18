@@ -1,5 +1,5 @@
 import { EOF, TokenType } from './tokenizer.mjs'
-import { Assignment, BinaryExpr, Grouping, Identifier, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
+import { Assignment, BinaryExpr, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
 
 function Parser(tokens){
     let pos = 0
@@ -23,7 +23,7 @@ function Parser(tokens){
         }
         return false
     }
-    const consume = (type, err) => {
+    const expect = (type, err) => {
         if (match(type)){
             return advance()
         }
@@ -31,9 +31,26 @@ function Parser(tokens){
     }
 
     this.parseExpression = function(){
-        const expr = this.parseAssignment()
-        consume(TokenType.END, `EOF expected, got ${peek().type}`)
+        const expr = this.parseIfExpression()
+        expect(TokenType.END, `EOF expected, got ${peek().type}`)
         return expr
+    }
+    this.parseIfExpression = function(){
+        if (match(TokenType.IF)) {
+            advance()
+            const cond = this.parseOrExpression()
+            expect(TokenType.THEN, `Expected ${TokenType.THEN}, got ${peek().type}`)
+
+            const body = this.parseAssignment()
+            let elsz
+            
+            if (match(TokenType.ELSE)){
+                advance()
+                elsz = this.parseAssignment()
+            }
+            return new IfExpr(cond, body, elsz)
+        }
+        return this.parseAssignment()
     }
     this.parseAssignment = function(){
         const expr = this.parseOrExpression()
@@ -134,22 +151,22 @@ function Parser(tokens){
         throw new Error(`Expected one of ${[TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
     }
     this.parseGroup = function(){
-        consume(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
+        expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
         const expr = this.parseAssignment()
-        consume(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
+        expect(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
         return new Grouping(expr)
     }
 
     this.parseIdentifier = function(){
-        const token = consume(TokenType.IDENTIFIER, `Expected identifier, got ${peek().type}`)
+        const token = expect(TokenType.IDENTIFIER, `Expected identifier, got ${peek().type}`)
         return new Identifier(token.value)
     }
     this.parseIntLiteral = function(){
-        const token = consume(TokenType.INT_LITERAL, `Expected an integer literal, got ${peek().type}`)
+        const token = expect(TokenType.INT_LITERAL, `Expected an integer literal, got ${peek().type}`)
         return new Literal(token.value)
     }
     this.parseBoolLiteral = function(){
-        const token = consume(TokenType.BOOL_LITERAL, `Expected a bool literal, got ${peek().type}`)
+        const token = expect(TokenType.BOOL_LITERAL, `Expected a bool literal, got ${peek().type}`)
         return new Literal(token.value === 'true')
     }
 }
