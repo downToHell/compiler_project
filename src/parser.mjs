@@ -31,26 +31,27 @@ function Parser(tokens){
     }
 
     this.parseExpression = function(){
-        const expr = this.parseIfExpression()
+        let expr
+
+        if (match(TokenType.IF)) expr = this.parseIfExpression()
+        else expr = this.parseAssignment()
+
         expect(TokenType.END, `EOF expected, got ${peek().type}`)
         return expr
     }
     this.parseIfExpression = function(){
-        if (match(TokenType.IF)) {
-            advance()
-            const cond = this.parseOrExpression()
-            expect(TokenType.THEN, `Expected ${TokenType.THEN}, got ${peek().type}`)
+        expect(TokenType.IF, `Expected ${TokenType.IF}, got ${peek().type}`)
+        const cond = this.parseOrExpression()
+        expect(TokenType.THEN, `Expected ${TokenType.THEN}, got ${peek().type}`)
 
-            const body = this.parseAssignment()
-            let elsz
-            
-            if (match(TokenType.ELSE)){
-                advance()
-                elsz = this.parseAssignment()
-            }
-            return new IfExpr(cond, body, elsz)
+        const body = this.parseAssignment()
+        let elsz
+        
+        if (match(TokenType.ELSE)){
+            advance()
+            elsz = this.parseAssignment()
         }
-        return this.parseAssignment()
+        return new IfExpr(cond, body, elsz)
     }
     this.parseAssignment = function(){
         const expr = this.parseOrExpression()
