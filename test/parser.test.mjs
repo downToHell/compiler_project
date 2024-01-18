@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { Parser } from "../src/parser.mjs"
 import { Tokenizer } from "../src/tokenizer.mjs"
-import { Assignment, BinaryExpr, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
+import { Assignment, BinaryExpr, Call, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
 
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
@@ -190,5 +190,14 @@ describe('Parser tests', function(){
     it('rejects assignment in if', function(){
         let parser = makeParser('if a = b then x + y')
         assert.throws(() => parser.parseExpression())
+    })
+
+    it('accepts function calls', function(){
+        let parser = makeParser('f(x, y + z)')
+        let expr = parser.parseExpression()
+        
+        assert.ok(expr instanceof Call)
+        assert.strictEqual(expr.target.name, 'f')
+        assert.strictEqual(expr.args.length, 2)
     })
 })

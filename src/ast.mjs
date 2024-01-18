@@ -37,3 +37,8 @@ export function IfExpr(cond, body, elsz){
     this.body = body
     this.elsz = elsz
 }
+
+export function Call(target, args){
+    this.target = target
+    this.args = args
+}

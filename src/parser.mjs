@@ -1,5 +1,5 @@
 import { EOF, TokenType } from './tokenizer.mjs'
-import { Assignment, BinaryExpr, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
+import { Assignment, BinaryExpr, Call, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
 
 function Parser(tokens){
     let pos = 0
@@ -139,7 +139,27 @@ function Parser(tokens){
             const right = this.parseUnaryExpression()
             return new UnaryExpr(right, op.value)
         }
-        return this.parseFactor()
+        return this.parseFunctionCall()
+    }
+    this.parseFunctionCall = function(){
+        const expr = this.parseFactor()
+
+        if (match(TokenType.LPAREN)){
+            advance()
+            const args = []
+
+            if (!match(TokenType.RPAREN)){
+                args.push(this.parseAssignment())
+
+                while (match(TokenType.COMMA)){
+                    advance()
+                    args.push(this.parseAssignment())
+                }
+            }
+            expect(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
+            return new Call(expr, args)
+        }
+        return expr
     }
     this.parseFactor = function(){
         if (match(TokenType.LPAREN)){
