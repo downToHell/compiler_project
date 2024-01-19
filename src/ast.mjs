@@ -47,3 +47,7 @@ export function Declaration(ident, initializer){
     this.ident = ident
     this.initializer = initializer
 }
+
+export function Block(exprs){
+    this.exprs = exprs
+}

@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { Parser } from "../src/parser.mjs"
 import { Tokenizer } from "../src/tokenizer.mjs"
-import { Assignment, BinaryExpr, Call, Declaration, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
+import { Assignment, BinaryExpr, Block, Call, Declaration, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
 
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
@@ -227,5 +227,18 @@ describe('Parser tests', function(){
     it('rejects invalid var identifier', function(){
         let parser = makeParser('var 3 = 5')
         assert.throws(() => parser.parseExpression())
+    })
+
+    it('accepts simple block', function(){
+        let parser = makeParser('{ f(a); x = y; f(x) }')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof Block)
+        assert.strictEqual(expr.exprs.length, 3)
+    })
+
+    it('accepts optional semicolon after block', function(){
+        let parser = makeParser('{ a = b + c; }')
+        assert.doesNotThrow(() => parser.parseExpression())
     })
 })

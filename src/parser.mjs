@@ -1,5 +1,5 @@
 import { EOF, TokenType } from './tokenizer.mjs'
-import { Assignment, BinaryExpr, Call, Declaration, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
+import { Assignment, BinaryExpr, Block, Call, Declaration, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
 
 function Parser(tokens){
     let pos = 0
@@ -23,6 +23,11 @@ function Parser(tokens){
         }
         return false
     }
+    const consume = (type) => {
+        if (match(type)){
+            advance()
+        }
+    }
     const expect = (type, err) => {
         if (match(type)){
             return advance()
@@ -38,6 +43,7 @@ function Parser(tokens){
     this.__parseExpression = function(){
         if (match(TokenType.IF)) return this.parseIfExpression()
         if (match(TokenType.VAR)) return this.parseVarDeclaration()
+        if (match(TokenType.LBRACE)) return this.parseBlockExpression()
         return this.parseAssignment()
     }
     this.parseIfExpression = function(){
@@ -60,6 +66,22 @@ function Parser(tokens){
         expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
         const initializer = this.__parseExpression()
         return new Declaration(ident, initializer)
+    }
+    this.parseBlockExpression = function(){
+        expect(TokenType.LBRACE, `Expected ${TokenType.LBRACE}, got ${peek().type}`)
+        const exprs = []
+        
+        while (!match(TokenType.RBRACE) && !match(TokenType.END)){
+            exprs.push(this.__parseExpression())
+
+            if (!match(TokenType.RBRACE)){
+                expect(TokenType.SEMICOLON, `Missing ${TokenType.SEMICOLON} at ${peek().type}`)
+            } else {
+                consume(TokenType.SEMICOLON)
+            }
+        }
+        expect(TokenType.RBRACE, `Missing ${TokenType.RBRACE} at ${peek().type}`)
+        return new Block(exprs)
     }
     this.parseAssignment = function(){
         const expr = this.parseOrExpression()
