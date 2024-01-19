@@ -86,7 +86,7 @@ function Tokenizer(inp, options){
     const makeNumber = (ch) => {
         let buf = ch
 
-        while (!isEOF() && isLetter(peek())){
+        while (!isEOF() && isNumber(peek())){
             buf += advance()
         }
         return makeToken(TokenType.INT_LITERAL, parseInt(buf))

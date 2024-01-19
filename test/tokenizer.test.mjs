@@ -11,6 +11,11 @@ describe('Tokenizer tests', function(){
         const scn = new Tokenizer('', opt)
         assert.ok(scn.tokens().length === 0)
     })
+
+    it('recognizes numbers > 9', function(){
+        const scn = new Tokenizer('155', opt)
+        assert.strictEqual(scn.nextToken(), makeToken(155, TokenType.INT_LITERAL))
+    })
     
     it('recognizes arithmetic operations', function(){
         const scn = new Tokenizer('3 + 5 * 8 % 2 / 7', opt)
