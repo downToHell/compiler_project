@@ -241,4 +241,30 @@ describe('Parser tests', function(){
         let parser = makeParser('{ a = b + c; }')
         assert.doesNotThrow(() => parser.parseExpression())
     })
+
+    it('accepts complex blocks', function(){
+        let parser = makeParser('{ { a } { b } }')
+        assert.doesNotThrow(() => parser.parseExpression())
+
+        parser = makeParser('{ a b }')
+        assert.throws(() => parser.parseExpression())
+
+        parser = makeParser('{ if true then { a } b }')
+        assert.doesNotThrow(() => parser.parseExpression())
+
+        parser = makeParser('{ if true then { a }; b }')
+        assert.doesNotThrow(() => parser.parseExpression())
+
+        parser = makeParser('{ if true then { a } b c')
+        assert.throws(() => parser.parseExpression())
+
+        parser = makeParser('{ if true then { a } b; c }')
+        assert.doesNotThrow(() => parser.parseExpression())
+
+        parser = makeParser('{ if true then { a } else { b } 3 }')
+        assert.doesNotThrow(() => parser.parseExpression())
+
+        parser = makeParser('x = { { f(a) } { b } }')
+        assert.doesNotThrow(() => parser.parseExpression())
+    })
 })
