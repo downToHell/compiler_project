@@ -1,7 +1,20 @@
 import assert from 'node:assert'
 import { Parser } from "../src/parser.mjs"
 import { Tokenizer } from "../src/tokenizer.mjs"
-import { Assignment, BinaryExpr, Block, Call, Declaration, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
+import {
+    Assignment,
+    BinaryExpr,
+    Block,
+    Call,
+    Declaration,
+    Grouping,
+    Identifier,
+    IfExpr,
+    Literal,
+    LogicalExpr,
+    UnaryExpr,
+    WhileExpr
+} from '../src/ast.mjs'
 
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
@@ -271,5 +284,15 @@ describe('Parser tests', function(){
 
         parser = makeParser('x = { { f(a) } { b } }')
         assert.doesNotThrow(() => parser.parseExpression())
+    })
+
+    it('accepts while loops', function(){
+        let parser = makeParser('while true do { x = x + 1; print_int(x) }')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof WhileExpr)
+        assert.ok(expr.cond instanceof Literal)
+        assert.ok(expr.body instanceof Block)
+        assert.strictEqual(expr.body.exprs.length, 2)
     })
 })

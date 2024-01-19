@@ -1,5 +1,18 @@
 import { EOF, TokenType } from './tokenizer.mjs'
-import { Assignment, BinaryExpr, Block, Call, Declaration, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
+import { 
+    Assignment,
+    BinaryExpr,
+    Block,
+    Call,
+    Declaration,
+    Grouping,
+    Identifier,
+    IfExpr,
+    Literal,
+    LogicalExpr,
+    UnaryExpr,
+    WhileExpr
+} from './ast.mjs'
 
 function Parser(tokens){
     let pos = 0
@@ -45,6 +58,7 @@ function Parser(tokens){
     this.__parseExpression = function(){
         if (match(TokenType.IF)) return this.parseIfExpression()
         if (match(TokenType.VAR)) return this.parseVarDeclaration()
+        if (match(TokenType.WHILE)) return this.parseWhileExpression()
         if (match(TokenType.LBRACE)) return this.parseBlockExpression()
         return this.parseAssignment()
     }
@@ -68,6 +82,13 @@ function Parser(tokens){
         expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
         const initializer = this.__parseExpression()
         return new Declaration(ident, initializer)
+    }
+    this.parseWhileExpression = function(){
+        expect(TokenType.WHILE, `Expected ${TokenType.WHILE}, got ${peek().type}`)
+        const cond = this.parseOrExpression()
+        expect(TokenType.DO, `Expected ${TokenType.DO}, got ${peek().type}`)
+        const body = this.__parseExpression()
+        return new WhileExpr(cond, body)
     }
     this.parseBlockExpression = function(){
         expect(TokenType.LBRACE, `Expected ${TokenType.LBRACE}, got ${peek().type}`)
@@ -201,6 +222,8 @@ function Parser(tokens){
             return this.parseIntLiteral()
         } else if (match(TokenType.BOOL_LITERAL)){
             return this.parseBoolLiteral()
+        } else if (match(TokenType.UNIT_LITERAL)){
+            return this.parseUnitLiteral()
         } else if (match(TokenType.IDENTIFIER)){
             return this.parseIdentifier()
         }
@@ -224,6 +247,10 @@ function Parser(tokens){
     this.parseBoolLiteral = function(){
         const token = expect(TokenType.BOOL_LITERAL, `Expected a bool literal, got ${peek().type}`)
         return new Literal(token.value === 'true')
+    }
+    this.parseUnitLiteral = function(){
+        expect(TokenType.UNIT_LITERAL, `Expected a unit literal, got ${peek().type}`)
+        return new Literal(null)
     }
 }
 
