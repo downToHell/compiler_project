@@ -23,11 +23,6 @@ function Parser(tokens){
         }
         return false
     }
-    const consume = (type) => {
-        if (match(type)){
-            advance()
-        }
-    }
     const expect = (type, err) => {
         if (match(type)){
             return advance()
@@ -76,8 +71,6 @@ function Parser(tokens){
 
             if (!match(TokenType.RBRACE)){
                 expect(TokenType.SEMICOLON, `Missing ${TokenType.SEMICOLON} at ${peek().type}`)
-            } else {
-                consume(TokenType.SEMICOLON)
             }
         }
         expect(TokenType.RBRACE, `Missing ${TokenType.RBRACE} at ${peek().type}`)
@@ -196,6 +189,8 @@ function Parser(tokens){
             return this.parseGroup()
         } else if (match(TokenType.INT_LITERAL)){
             return this.parseIntLiteral()
+        } else if (match(TokenType.BOOL_LITERAL)){
+            return this.parseBoolLiteral()
         } else if (match(TokenType.IDENTIFIER)){
             return this.parseIdentifier()
         }

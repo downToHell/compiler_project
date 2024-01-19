@@ -162,14 +162,14 @@ describe('Parser tests', function(){
     })
 
     it('accepts if expressions', function(){
-        let parser = makeParser('if a then b + c else x * y')
+        let parser = makeParser('if true then b + c else x * y')
         let expr = parser.parseExpression()
 
         assert.ok(expr instanceof IfExpr)
-        assert.ok(expr.cond instanceof Identifier)
+        assert.ok(expr.cond instanceof Literal)
         assert.ok(expr.body instanceof BinaryExpr)
         assert.ok(expr.elsz instanceof BinaryExpr)
-        assert.strictEqual(expr.cond.name, 'a')
+        assert.strictEqual(expr.cond.value, true)
         assert.strictEqual(expr.body.op, '+')
         assert.strictEqual(expr.body.left.name, 'b')
         assert.strictEqual(expr.body.right.name, 'c')
