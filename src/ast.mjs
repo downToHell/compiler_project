@@ -42,3 +42,8 @@ export function Call(target, args){
     this.target = target
     this.args = args
 }
+
+export function Declaration(ident, initializer){
+    this.ident = ident
+    this.initializer = initializer
+}

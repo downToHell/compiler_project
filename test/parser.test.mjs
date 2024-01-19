@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { Parser } from "../src/parser.mjs"
 import { Tokenizer } from "../src/tokenizer.mjs"
-import { Assignment, BinaryExpr, Call, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
+import { Assignment, BinaryExpr, Call, Declaration, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from '../src/ast.mjs'
 
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
@@ -199,5 +199,33 @@ describe('Parser tests', function(){
         assert.ok(expr instanceof Call)
         assert.strictEqual(expr.target.name, 'f')
         assert.strictEqual(expr.args.length, 2)
+    })
+
+    it('accepts variable declaration', function(){
+        let parser = makeParser('var x = 123 + 4')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof Declaration)
+        assert.ok(expr.ident instanceof Identifier)
+        assert.ok(expr.initializer instanceof BinaryExpr)
+    })
+
+    it('treats declaration as expression', function(){
+        let parser = makeParser('(var x = 123) + 7')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof BinaryExpr)
+        assert.ok(expr.left instanceof Grouping)
+        assert.ok(expr.left.expr instanceof Declaration)
+    })
+
+    it('rejects declaration without initializer', function(){
+        let parser = makeParser('var x')
+        assert.throws(() => parser.parseExpression())
+    })
+
+    it('rejects invalid var identifier', function(){
+        let parser = makeParser('var 3 = 5')
+        assert.throws(() => parser.parseExpression())
     })
 })

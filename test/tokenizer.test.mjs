@@ -14,7 +14,10 @@ describe('Tokenizer tests', function(){
 
     it('recognizes numbers > 9', function(){
         const scn = new Tokenizer('155', opt)
-        assert.strictEqual(scn.nextToken(), makeToken(155, TokenType.INT_LITERAL))
+
+        assert.deepStrictEqual(scn.tokens(), [
+            makeToken(155, TokenType.INT_LITERAL)
+        ])
     })
     
     it('recognizes arithmetic operations', function(){

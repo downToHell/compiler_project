@@ -1,5 +1,5 @@
 import { EOF, TokenType } from './tokenizer.mjs'
-import { Assignment, BinaryExpr, Call, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
+import { Assignment, BinaryExpr, Call, Declaration, Grouping, Identifier, IfExpr, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
 
 function Parser(tokens){
     let pos = 0
@@ -31,34 +31,42 @@ function Parser(tokens){
     }
 
     this.parseExpression = function(){
-        let expr
-
-        if (match(TokenType.IF)) expr = this.parseIfExpression()
-        else expr = this.parseAssignment()
-
+        let expr = this.__parseExpression()
         expect(TokenType.END, `EOF expected, got ${peek().type}`)
         return expr
+    }
+    this.__parseExpression = function(){
+        if (match(TokenType.IF)) return this.parseIfExpression()
+        if (match(TokenType.VAR)) return this.parseVarDeclaration()
+        return this.parseAssignment()
     }
     this.parseIfExpression = function(){
         expect(TokenType.IF, `Expected ${TokenType.IF}, got ${peek().type}`)
         const cond = this.parseOrExpression()
         expect(TokenType.THEN, `Expected ${TokenType.THEN}, got ${peek().type}`)
 
-        const body = this.parseAssignment()
+        const body = this.__parseExpression()
         let elsz
         
         if (match(TokenType.ELSE)){
             advance()
-            elsz = this.parseAssignment()
+            elsz = this.__parseExpression()
         }
         return new IfExpr(cond, body, elsz)
+    }
+    this.parseVarDeclaration = function(){
+        expect(TokenType.VAR, `Expected ${TokenType.VAR}, got ${peek().type}`)
+        const ident = this.parseIdentifier()
+        expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
+        const initializer = this.__parseExpression()
+        return new Declaration(ident, initializer)
     }
     this.parseAssignment = function(){
         const expr = this.parseOrExpression()
 
         if (match(TokenType.EQ)){
             advance()
-            const value = this.parseAssignment()
+            const value = this.__parseExpression()
 
             if (expr instanceof Identifier){
                 return new Assignment(expr, value)
@@ -149,11 +157,11 @@ function Parser(tokens){
             const args = []
 
             if (!match(TokenType.RPAREN)){
-                args.push(this.parseAssignment())
+                args.push(this.__parseExpression())
 
                 while (match(TokenType.COMMA)){
                     advance()
-                    args.push(this.parseAssignment())
+                    args.push(this.__parseExpression())
                 }
             }
             expect(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
@@ -173,7 +181,7 @@ function Parser(tokens){
     }
     this.parseGroup = function(){
         expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
-        const expr = this.parseAssignment()
+        const expr = this.__parseExpression()
         expect(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
         return new Grouping(expr)
     }
