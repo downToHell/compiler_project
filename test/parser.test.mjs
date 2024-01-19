@@ -80,14 +80,14 @@ describe('Parser tests', function(){
     })
 
     it('accepts double negation', function(){
-        let parser = makeParser('--8')
+        let parser = makeParser('not not 8')
         let expr = parser.parseExpression()
 
         assert.ok(expr instanceof UnaryExpr)
         assert.ok(expr.right instanceof UnaryExpr)
         assert.ok(expr.right.right instanceof Literal)
-        assert.strictEqual(expr.op, '-')
-        assert.strictEqual(expr.right.op, '-')
+        assert.strictEqual(expr.op, 'not')
+        assert.strictEqual(expr.right.op, 'not')
         assert.strictEqual(expr.right.right.value, 8)
     })
 

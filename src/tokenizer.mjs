@@ -4,9 +4,10 @@ const TokenType = Object.freeze({
     EQ: '=',
     EQ_EQ: '==',
     NE: '!=',
-    NOT: '!',
+    BANG: '!',
     OR: 'or',
     AND: 'and',
+    NOT: 'not',
     LT: '<',
     LE: '<=',
     GT: '>',
@@ -47,7 +48,8 @@ const keywords = Object.freeze({
     true: TokenType.BOOL_LITERAL,
     false: TokenType.BOOL_LITERAL,
     or: TokenType.OR,
-    and: TokenType.AND
+    and: TokenType.AND,
+    not: TokenType.NOT
 })
 
 function isNumber(str){
@@ -158,7 +160,7 @@ function Tokenizer(inp, options){
             case TokenType.LT: return consume(TokenType.EQ) ? makeToken(TokenType.LE) : makeToken(ch)
             case TokenType.GT: return consume(TokenType.EQ) ? makeToken(TokenType.GE) : makeToken(ch)
             case TokenType.EQ: return consume(TokenType.EQ) ? makeToken(TokenType.EQ_EQ) : makeToken(ch)
-            case TokenType.NOT: return consume(TokenType.EQ) ? makeToken(TokenType.NE) : makeToken(ch)
+            case TokenType.BANG: return consume(TokenType.EQ) ? makeToken(TokenType.NE) : makeToken(ch)
             case ' ':
             case '\t':
             case '\r':
