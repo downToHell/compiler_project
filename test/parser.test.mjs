@@ -229,6 +229,11 @@ describe('Parser tests', function(){
         assert.throws(() => parser.parseExpression())
     })
 
+    it('accepts empty block', function(){
+        let parser = makeParser('{ }')
+        assert.doesNotThrow(() => parser.parseExpression())
+    })
+
     it('accepts simple block', function(){
         let parser = makeParser('{ f(a); x = y; f(x) }')
         let expr = parser.parseExpression()

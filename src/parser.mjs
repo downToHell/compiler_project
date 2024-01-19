@@ -29,7 +29,7 @@ function Parser(tokens){
         }
         throw new Error(`${peek().loc}: ${err}`)
     }
-    const checkBlock = (expr) => {
+    const isBlock = (expr) => {
         if (expr instanceof IfExpr) {
             if (expr.elsz) return expr.elsz instanceof Block
             return expr.body instanceof Block
@@ -77,7 +77,7 @@ function Parser(tokens){
             exprs.push(this.__parseExpression())
 
             // TODO: insert literal with value null if final semicolon is present. See Task 6
-            if (!match(TokenType.RBRACE) && !checkBlock(exprs[exprs.length - 1])){
+            if (!match(TokenType.RBRACE) && !isBlock(exprs[exprs.length - 1])){
                 expect(TokenType.SEMICOLON, `Missing ${TokenType.SEMICOLON} at ${peek().type}`)
             } else if (match(TokenType.SEMICOLON)) {
                 advance()
