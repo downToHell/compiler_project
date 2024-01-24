@@ -7,6 +7,7 @@ import {
     Declaration,
     Grouping,
     Identifier,
+    IfExpr,
     Literal,
     LogicalExpr,
     UnaryExpr } from './ast.mjs'
@@ -23,6 +24,7 @@ function Interpreter(_env){
             case UnaryExpr: return this.evaluateUnaryExpr(node)
             case Grouping: return this.interpret(node.expr)
             case Block: return this.evaluateBlock(node)
+            case IfExpr: return this.evaluateIfExpr(node)
             case Call: return this.evaluateCall(node)
             case Declaration: return this.evaluateDeclaration(node)
             case Assignment: return this.evaluateAssignment(node)
@@ -81,6 +83,14 @@ function Interpreter(_env){
             last = this.interpret(e)
         }
         return last
+    }
+    this.evaluateIfExpr = function(node){
+        if (this.interpret(node.cond)){
+            return this.interpret(node.body)
+        } else if (node.elsz){
+            return this.interpret(node.elsz)
+        }
+        return null
     }
     this.evaluateCall = function(node){
         const fn = env.getSymbol(node.target.name)

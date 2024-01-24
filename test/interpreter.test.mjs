@@ -52,4 +52,22 @@ describe('Interpreter tests', function(){
         value = interpret('5 != 5 and b')
         assert.strictEqual(value, false)
     })
+
+    it('evaluates if-then-else expressions', function(){
+        let value = interpret('if 3 < 4 then 1 else 0')
+        assert.strictEqual(value, 1)
+
+        value = interpret('if false or 3 + 2 == 5 then 666 else 444')
+        assert.strictEqual(value, 666)
+
+        value = interpret('if 3 > 4 then 3 else 4')
+        assert.strictEqual(value, 4)
+
+        value = interpret('if 3 == 5 then 0')
+        assert.strictEqual(value, null)
+    })
+
+    it('rejects assignment in if', function(){
+        assert.throws(() => interpret('{ var x = 3; if x = 5 then print_int(3) }'))
+    })
 })
