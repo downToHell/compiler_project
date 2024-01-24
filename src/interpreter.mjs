@@ -1,5 +1,5 @@
 import { SymTab } from './symtab.mjs'
-import { Assignment, BinaryExpr, Call, Declaration, Identifier, Literal, LogicalExpr } from './ast.mjs'
+import { Assignment, BinaryExpr, Call, Declaration, Identifier, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
 
 function Interpreter(_env){
     const env = _env || new SymTab()
@@ -10,11 +10,12 @@ function Interpreter(_env){
             case Identifier: return env.getSymbol(node.name)
             case BinaryExpr: return this.evaluateBinaryExpr(node)
             case LogicalExpr: return this.evaluateLogicalExpr(node)
+            case UnaryExpr: return this.evaluateUnaryExpr(node)
             case Call: return this.evaluateCall(node)
             case Declaration: return this.evaluateDeclaration(node)
             case Assignment: return this.evaluateAssignment(node)
             default: {
-                throw new Error(`Unknown ast node: ${node}`)
+                throw new Error(`Unknown ast node: ${node.constructor.name}`)
             }
         }
     }
@@ -27,6 +28,7 @@ function Interpreter(_env){
             case '-': return a - b
             case '*': return a * b
             case '/': return a / b
+            case '%': return a % b
             default: {
                 throw new Error(`Invalid operator: ${node.op}`)
             }
@@ -45,6 +47,17 @@ function Interpreter(_env){
             case '<=': return a <= b
             case '>': return a > b
             case '>=': return a >= b
+            default: {
+                throw new Error(`Invalid operator: ${node.op}`)
+            }
+        }
+    }
+    this.evaluateUnaryExpr = function(node){
+        const a = this.interpret(node.right)
+
+        switch(node.op){
+            case 'not': return !a
+            case '-': return -a
             default: {
                 throw new Error(`Invalid operator: ${node.op}`)
             }

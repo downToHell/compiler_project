@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import readline from 'readline'
 import { Tokenizer } from './src/tokenizer.mjs'
 import { Parser } from './src/parser.mjs'
@@ -17,6 +18,7 @@ const sym = new SymTab()
 sym.addSymbol('print_int', (i) => console.log(i))
 sym.addSymbol('print_bool', (b) => console.log(b))
 sym.addSymbol('clear', () => console.clear())
+sym.addSymbol('exit', () => process.exit())
 
 while (true){
     const command = await repl('>>> ')
