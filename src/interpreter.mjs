@@ -10,7 +10,8 @@ import {
     IfExpr,
     Literal,
     LogicalExpr,
-    UnaryExpr } from './ast.mjs'
+    UnaryExpr, 
+    WhileExpr} from './ast.mjs'
 
 function Interpreter(_env){
     const env = _env || new SymTab()
@@ -25,6 +26,7 @@ function Interpreter(_env){
             case Grouping: return this.interpret(node.expr)
             case Block: return this.evaluateBlock(node)
             case IfExpr: return this.evaluateIfExpr(node)
+            case WhileExpr: return this.evaluateWhileExpression(node)
             case Call: return this.evaluateCall(node)
             case Declaration: return this.evaluateDeclaration(node)
             case Assignment: return this.evaluateAssignment(node)
@@ -89,6 +91,12 @@ function Interpreter(_env){
             return this.interpret(node.body)
         } else if (node.elsz){
             return this.interpret(node.elsz)
+        }
+        return null
+    }
+    this.evaluateWhileExpression = function(node){
+        while (this.interpret(node.cond)){
+            this.interpret(node.body)
         }
         return null
     }

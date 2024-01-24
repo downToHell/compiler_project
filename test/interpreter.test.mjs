@@ -41,7 +41,7 @@ describe('Interpreter tests', function(){
         let value = interpret('3 < 5')
         assert.strictEqual(value, true)
 
-        value = interpret('{ var x = 3;\nx > 2 }')
+        value = interpret('{ var x = 3; x > 2 }')
         assert.strictEqual(value, true)
     })
 
@@ -69,5 +69,10 @@ describe('Interpreter tests', function(){
 
     it('rejects assignment in if', function(){
         assert.throws(() => interpret('{ var x = 3; if x = 5 then print_int(3) }'))
+    })
+
+    it('evaluates while expressions', function(){
+        const value = interpret('{ var y = 0; while y < 5 do y = y + 1; y } ')
+        assert.strictEqual(value, 5)
     })
 })

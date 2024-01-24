@@ -8,7 +8,7 @@ function SymTab(parent){
         locals[name] = value
     }
     this.setSymbol = function(name, value){
-        if (!locals[name]){
+        if (typeof locals[name] === 'undefined'){
             throw new Error(`Undefined symbol: ${name}`)
         }
         locals[name] = value
@@ -16,7 +16,7 @@ function SymTab(parent){
     this.getSymbol = function(name){
         const sym = locals[name]
 
-        if (sym) return sym
+        if (typeof sym !== 'undefined') return sym
         if (parent) return parent.getSymbol(name)
         throw new Error(`Undefined symbol: ${name}`)
     }
