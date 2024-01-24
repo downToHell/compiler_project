@@ -17,6 +17,10 @@ const interpret = (src) => {
 
 describe('Interpreter tests', function(){
 
+    it('rejects empty expression', function(){
+        assert.throws(() => interpret(''))
+    })
+
     it('evaluates simple arithmetic', function(){
         const value = interpret('1 + 2')
         assert.strictEqual(value, 3)
