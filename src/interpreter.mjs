@@ -11,7 +11,8 @@ import {
     Literal,
     LogicalExpr,
     UnaryExpr, 
-    WhileExpr} from './ast.mjs'
+    WhileExpr
+} from './ast.mjs'
 
 function Interpreter(_env){
     const env = _env || new SymTab()
