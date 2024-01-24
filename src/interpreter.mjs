@@ -1,5 +1,15 @@
 import { SymTab } from './symtab.mjs'
-import { Assignment, BinaryExpr, Call, Declaration, Identifier, Literal, LogicalExpr, UnaryExpr } from './ast.mjs'
+import {
+    Assignment,
+    BinaryExpr,
+    Block,
+    Call,
+    Declaration,
+    Grouping,
+    Identifier,
+    Literal,
+    LogicalExpr,
+    UnaryExpr } from './ast.mjs'
 
 function Interpreter(_env){
     const env = _env || new SymTab()
@@ -11,6 +21,8 @@ function Interpreter(_env){
             case BinaryExpr: return this.evaluateBinaryExpr(node)
             case LogicalExpr: return this.evaluateLogicalExpr(node)
             case UnaryExpr: return this.evaluateUnaryExpr(node)
+            case Grouping: return this.interpret(node.expr)
+            case Block: return this.evaluateBlock(node)
             case Call: return this.evaluateCall(node)
             case Declaration: return this.evaluateDeclaration(node)
             case Assignment: return this.evaluateAssignment(node)
@@ -27,7 +39,7 @@ function Interpreter(_env){
             case '+': return a + b
             case '-': return a - b
             case '*': return a * b
-            case '/': return a / b
+            case '/': return parseInt(a / b)
             case '%': return a % b
             default: {
                 throw new Error(`Invalid operator: ${node.op}`)
@@ -36,17 +48,16 @@ function Interpreter(_env){
     }
     this.evaluateLogicalExpr = function(node){
         const a = this.interpret(node.left)
-        const b = this.interpret(node.right)
 
         switch(node.op){
-            case 'or': return a || b
-            case 'and': return a && b
-            case '==': return a === b
-            case '!=': return a !== b
-            case '<': return a < b
-            case '<=': return a <= b
-            case '>': return a > b
-            case '>=': return a >= b
+            case 'or': return a || this.interpret(node.right)
+            case 'and': return a && this.interpret(node.right)
+            case '==': return a === this.interpret(node.right)
+            case '!=': return a !== this.interpret(node.right)
+            case '<': return a < this.interpret(node.right)
+            case '<=': return a <= this.interpret(node.right)
+            case '>': return a > this.interpret(node.right)
+            case '>=': return a >= this.interpret(node.right)
             default: {
                 throw new Error(`Invalid operator: ${node.op}`)
             }
@@ -62,6 +73,14 @@ function Interpreter(_env){
                 throw new Error(`Invalid operator: ${node.op}`)
             }
         }
+    }
+    this.evaluateBlock = function(node){
+        let last
+
+        for (const e of node.exprs){
+            last = this.interpret(e)
+        }
+        return last
     }
     this.evaluateCall = function(node){
         const fn = env.getSymbol(node.target.name)
