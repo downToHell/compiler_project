@@ -16,6 +16,14 @@ import {
 
 function Parser(tokens){
     let pos = 0
+    let left_precedence_ops = [
+        { types: [TokenType.OR], produces: LogicalExpr },
+        { types: [TokenType.AND], produces: LogicalExpr },
+        { types: [TokenType.EQ_EQ, TokenType.NE], produces: LogicalExpr },
+        { types: [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE], produces: LogicalExpr },
+        { types: [TokenType.PLUS, TokenType.MINUS], produces: BinaryExpr },
+        { types: [TokenType.MUL, TokenType.DIV], produces: BinaryExpr }
+    ]
 
     const peek = () => {
         if (pos < tokens.length){
@@ -64,7 +72,7 @@ function Parser(tokens){
     }
     this.parseIfExpression = function(){
         expect(TokenType.IF, `Expected ${TokenType.IF}, got ${peek().type}`)
-        const cond = this.parseOrExpression()
+        const cond = this.parseLeftPrecedenceExpr()
         expect(TokenType.THEN, `Expected ${TokenType.THEN}, got ${peek().type}`)
 
         const body = this.__parseExpression()
@@ -85,7 +93,7 @@ function Parser(tokens){
     }
     this.parseWhileExpression = function(){
         expect(TokenType.WHILE, `Expected ${TokenType.WHILE}, got ${peek().type}`)
-        const cond = this.parseOrExpression()
+        const cond = this.parseLeftPrecedenceExpr()
         expect(TokenType.DO, `Expected ${TokenType.DO}, got ${peek().type}`)
         const body = this.__parseExpression()
         return new WhileExpr(cond, body)
@@ -108,7 +116,7 @@ function Parser(tokens){
         return new Block(exprs)
     }
     this.parseAssignment = function(){
-        const expr = this.parseOrExpression()
+        const expr = this.parseLeftPrecedenceExpr()
 
         if (match(TokenType.EQ)){
             advance()
@@ -121,69 +129,23 @@ function Parser(tokens){
         }
         return expr
     }
-    this.parseOrExpression = function(){
-        let left = this.parseAndExpression()
+    this.parseLeftPrecedenceExpr = function(){
+        const ops = [...left_precedence_ops]
+        const current_level = ops.shift()
 
-        while (match(TokenType.OR)){
-            const op = advance()
-            const right = this.parseAndExpression()
-
-            left = new LogicalExpr(left, op.value, right)
-        }
-        return left
+        return this.__parseLeftPrecedenceExpr(current_level, ops)
     }
-    this.parseAndExpression = function(){
-        let left = this.parseEquality()
+    this.__parseLeftPrecedenceExpr = function(current_level, more){
+        const next_level = more.shift()
+        const mm = [...more]
+        
+        let left = next_level ? this.__parseLeftPrecedenceExpr(next_level, more) : this.parseUnaryExpression()
 
-        while (match(TokenType.AND)){
+        while (match(...current_level.types)){
             const op = advance()
-            const right = this.parseEquality()
+            const right = next_level ? this.__parseLeftPrecedenceExpr(next_level, mm) : this.parseUnaryExpression()
 
-            left = new LogicalExpr(left, op.value, right)
-        }
-        return left
-    }
-    this.parseEquality = function(){
-        let left = this.parseComparison()
-
-        while (match(TokenType.EQ_EQ, TokenType.NE)){
-            const op = advance()
-            const right = this.parseComparison()
-
-            left = new LogicalExpr(left, op.value, right)
-        }
-        return left
-    }
-    this.parseComparison = function(){
-        let left = this.parseAdditiveExpression()
-
-        while (match(TokenType.GT, TokenType.GE, TokenType.LT, TokenType.LE)){
-            const op = advance()
-            const right = this.parseAdditiveExpression()
-
-            left = new LogicalExpr(left, op.value, right)
-        }
-        return left
-    }
-    this.parseAdditiveExpression = function(){
-        let left = this.parseMultiplicativeExpression()
-
-        while (match(TokenType.PLUS, TokenType.MINUS)){
-            const op = advance()
-            const right = this.parseMultiplicativeExpression()
-
-            left = new BinaryExpr(left, op.value, right)
-        }
-        return left
-    }
-    this.parseMultiplicativeExpression = function(){
-        let left = this.parseUnaryExpression()
-
-        while (match(TokenType.MUL, TokenType.DIV, TokenType.MOD)){
-            const op = advance()
-            const right = this.parseUnaryExpression()
-
-            left = new BinaryExpr(left, op.value, right)
+            left = new current_level.produces(left, op.value, right)
         }
         return left
     }
