@@ -21,7 +21,7 @@ describe('Tokenizer tests', function(){
     })
     
     it('recognizes arithmetic operations', function(){
-        const scn = new Tokenizer('3 + 5 * 8 % 2 / 7', opt)
+        const scn = new Tokenizer('3 + 5 * 8 % 2 / 7 ** 4', opt)
 
         assert.deepStrictEqual(scn.tokens(), [
             makeToken(3, TokenType.INT_LITERAL),
@@ -32,7 +32,9 @@ describe('Tokenizer tests', function(){
             makeToken('%', TokenType.MOD),
             makeToken(2, TokenType.INT_LITERAL),
             makeToken('/', TokenType.DIV),
-            makeToken(7, TokenType.INT_LITERAL)
+            makeToken(7, TokenType.INT_LITERAL),
+            makeToken('**', TokenType.POW),
+            makeToken(4, TokenType.INT_LITERAL)
         ])
     })
 

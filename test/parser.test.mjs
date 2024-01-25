@@ -65,6 +65,26 @@ describe('Parser tests', function(){
         assert.strictEqual(expr.right.right.value, 3)
     })
 
+    it('accepts power expressions', function(){
+        let parser = makeParser('1 + 2 * 3 ** 5')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof BinaryExpr)
+        assert.ok(expr.left instanceof Literal)
+        assert.ok(expr.right instanceof BinaryExpr)
+        assert.ok(expr.right.left instanceof Literal)
+        assert.ok(expr.right.right instanceof BinaryExpr)
+        assert.ok(expr.right.right.left instanceof Literal)
+        assert.ok(expr.right.right.right instanceof Literal)
+        assert.strictEqual(expr.op, '+')
+        assert.strictEqual(expr.right.op, '*')
+        assert.strictEqual(expr.right.right.op, '**')
+        assert.strictEqual(expr.left.value, 1)   
+        assert.strictEqual(expr.right.left.value, 2)
+        assert.strictEqual(expr.right.right.left.value, 3)
+        assert.strictEqual(expr.right.right.right.value, 5)
+    })
+
     it('accepts grouped expressions', function(){
         let parser = makeParser('(1 - 2) / 3')
         let expr = parser.parseExpression()

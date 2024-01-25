@@ -22,7 +22,8 @@ function Parser(tokens){
         { types: [TokenType.EQ_EQ, TokenType.NE], produces: LogicalExpr },
         { types: [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE], produces: LogicalExpr },
         { types: [TokenType.PLUS, TokenType.MINUS], produces: BinaryExpr },
-        { types: [TokenType.MUL, TokenType.DIV], produces: BinaryExpr }
+        { types: [TokenType.MUL, TokenType.DIV], produces: BinaryExpr },
+        { types: [TokenType.POW], produces: BinaryExpr }
     ]
 
     const peek = () => {

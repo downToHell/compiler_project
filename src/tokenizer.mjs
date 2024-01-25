@@ -15,6 +15,7 @@ const TokenType = Object.freeze({
     PLUS: '+',
     MINUS: '-',
     MUL: '*',
+    POW: '**',
     DIV: '/',
     MOD: '%',
     LPAREN: '(',
@@ -145,7 +146,6 @@ function Tokenizer(inp, options){
         switch (ch){
             case TokenType.PLUS:
             case TokenType.MINUS:
-            case TokenType.MUL:
             case TokenType.MOD:
             case TokenType.LPAREN:
             case TokenType.RPAREN:
@@ -157,6 +157,7 @@ function Tokenizer(inp, options){
                 return makeToken(ch)
             case TokenType.DIV: return handleDivToken(ch)
             case TokenType.HASHTAG: return skipSingleLineComment()
+            case TokenType.MUL: return consume(TokenType.MUL) ? makeToken(TokenType.POW) : makeToken(ch)
             case TokenType.LT: return consume(TokenType.EQ) ? makeToken(TokenType.LE) : makeToken(ch)
             case TokenType.GT: return consume(TokenType.EQ) ? makeToken(TokenType.GE) : makeToken(ch)
             case TokenType.EQ: return consume(TokenType.EQ) ? makeToken(TokenType.EQ_EQ) : makeToken(ch)

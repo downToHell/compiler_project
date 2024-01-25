@@ -27,8 +27,8 @@ describe('Interpreter tests', function(){
     })
 
     it('gets precedence right', function(){
-        const value = interpret('1 + 2 * 3')
-        assert.strictEqual(value, 7)
+        const value = interpret('1 + 2 * 3 ** 5')
+        assert.strictEqual(value, 487)
     })
 
     it('evaluates parenthesized expressions', function(){

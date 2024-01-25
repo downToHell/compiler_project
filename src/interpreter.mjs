@@ -46,6 +46,7 @@ function Interpreter(_env){
             case '*': return a * b
             case '/': return parseInt(a / b)
             case '%': return a % b
+            case '**': return Math.pow(a, b)
             default: {
                 throw new Error(`Invalid operator: ${node.op}`)
             }
