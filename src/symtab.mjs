@@ -1,6 +1,9 @@
 function SymTab(parent){
     const locals = {}
 
+    this.getParent = function(){
+        return parent
+    }
     this.addSymbol = function(name, value){
         if (locals[name]){
             throw new Error(`Symbol ${name} already defined`)

@@ -57,4 +57,8 @@ describe('Typechecker tests', function(){
     it('rejects reassignment with differing type', function(){
         assert.throws(() => typecheck('{ var x = 3; x = true }'))
     })
+
+    it('rejects unscoped variable', function(){
+        assert.throws(() => typecheck('{ var x = 3; { var y = 0 } y }'))
+    })
 })

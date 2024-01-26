@@ -8,7 +8,8 @@ import {
     Identifier,
     IfExpr,
     Literal,
-    LogicalExpr
+    LogicalExpr,
+    WhileExpr
 } from './ast.mjs'
 import { TokenType } from './tokenizer.mjs'
 
@@ -25,7 +26,7 @@ const COMPARISON_OPS = Object.freeze([
 ])
 
 function TypeChecker(){
-    const env = new SymTab()
+    let env = new SymTab()
 
     this.typecheck = function(node){
         switch(node.constructor){
@@ -35,6 +36,7 @@ function TypeChecker(){
             case LogicalExpr: return this.typeOfLogicalExpr(node)
             case Block: return this.typeOfBlock(node)
             case IfExpr: return this.typeOfIfExpr(node)
+            case WhileExpr: return this.typeOfWhileExpr(node)
             case Assignment: return this.typeOfAssignment(node)
             case Declaration: return this.typeOfDeclaration(node)
             default: throw new Error(`Unknown ast node: ${node.constructor.name}`)
@@ -87,11 +89,13 @@ function TypeChecker(){
         throw new Error(`Invalid operant '${node.op}' for logical expression`)
     }
     this.typeOfBlock = function(node){
+        env = new SymTab(env)
         let last
 
         for (let expr of node.exprs){
             last = this.typecheck(expr)
         }
+        env = env.getParent()
         return last
     }
     this.typeOfIfExpr = function(node){
@@ -109,6 +113,15 @@ function TypeChecker(){
             throw new Error('Types of then-clause and else-clause must match')
         }
         return b
+    }
+    this.typeOfWhileExpr = function(node){
+        const a = this.typecheck(node.cond)
+
+        if (a !== Bool){
+            throw new Error(`Condition of when expression must be a Bool, got ${a} instead`)
+        }
+        this.typecheck(node.body)
+        return Unit
     }
     this.typeOfDeclaration = function(node){
         const type = this.typecheck(node.initializer)

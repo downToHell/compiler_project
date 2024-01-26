@@ -79,4 +79,8 @@ describe('Interpreter tests', function(){
         const value = interpret('{ var y = 0; while y < 5 do y = y + 1; y } ')
         assert.strictEqual(value, 5)
     })
+
+    it('rejects unscoped variable', function(){
+        assert.throws(() => interpret('{ var x = 3; { var y = 0; } y }'))
+    })
 })

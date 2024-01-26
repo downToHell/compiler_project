@@ -15,7 +15,7 @@ import {
 } from './ast.mjs'
 
 function Interpreter(_env){
-    const env = _env || new SymTab()
+    let env = _env || new SymTab()
 
     this.interpret = function(node){
         switch(node.constructor){
@@ -81,11 +81,13 @@ function Interpreter(_env){
         }
     }
     this.evaluateBlock = function(node){
+        env = new SymTab(env)
         let last
 
         for (const e of node.exprs){
             last = this.interpret(e)
         }
+        env = env.getParent()
         return last
     }
     this.evaluateIfExpr = function(node){
