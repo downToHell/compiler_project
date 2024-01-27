@@ -13,9 +13,24 @@ import {
     UnaryExpr, 
     WhileExpr
 } from './ast.mjs'
+import { TokenType } from './tokenizer.mjs'
 
 function Interpreter(_env){
     let env = _env || new SymTab()
+    env.addIfAbsent(TokenType.PLUS, (a, b) => a + b)
+    env.addIfAbsent(TokenType.MINUS, (a, b) => a - b)
+    env.addIfAbsent(TokenType.MUL, (a, b) => a * b)
+    env.addIfAbsent(TokenType.DIV, (a, b) => parseInt(a / b))
+    env.addIfAbsent(TokenType.MOD, (a, b) => a % b)
+    env.addIfAbsent(TokenType.POW, (a, b) => Math.pow(a, b))
+    env.addIfAbsent(TokenType.EQ_EQ, (a, b) => a === b)
+    env.addIfAbsent(TokenType.NE, (a, b) => a !== b)
+    env.addIfAbsent(TokenType.LT, (a, b) => a < b)
+    env.addIfAbsent(TokenType.LE, (a, b) => a <= b)
+    env.addIfAbsent(TokenType.GT, (a, b) => a > b)
+    env.addIfAbsent(TokenType.GE, (a, b) => a >= b)
+    env.addIfAbsent(TokenType.NOT, (a) => !a)
+    env.addIfAbsent(TokenType.UNARY_MINUS, (a) => -a)
 
     this.interpret = function(node){
         switch(node.constructor){
@@ -37,48 +52,18 @@ function Interpreter(_env){
         }
     }
     this.evaluateBinaryExpr = function(node){
-        const a = this.interpret(node.left)
-        const b = this.interpret(node.right)
-
-        switch(node.op){
-            case '+': return a + b
-            case '-': return a - b
-            case '*': return a * b
-            case '/': return parseInt(a / b)
-            case '%': return a % b
-            case '**': return Math.pow(a, b)
-            default: {
-                throw new Error(`Invalid operator: ${node.op}`)
-            }
-        }
+        return this.evaluateCall({ target: { name: node.op }, args: [node.left, node.right] })
     }
     this.evaluateLogicalExpr = function(node){
-        const a = this.interpret(node.left)
-
         switch(node.op){
-            case 'or': return a || this.interpret(node.right)
-            case 'and': return a && this.interpret(node.right)
-            case '==': return a === this.interpret(node.right)
-            case '!=': return a !== this.interpret(node.right)
-            case '<': return a < this.interpret(node.right)
-            case '<=': return a <= this.interpret(node.right)
-            case '>': return a > this.interpret(node.right)
-            case '>=': return a >= this.interpret(node.right)
-            default: {
-                throw new Error(`Invalid operator: ${node.op}`)
-            }
+            case TokenType.OR: return this.interpret(node.left) || this.interpret(node.right)
+            case TokenType.AND: return this.interpret(node.left) && this.interpret(node.right)
+            default: return this.evaluateBinaryExpr(node)
         }
     }
     this.evaluateUnaryExpr = function(node){
-        const a = this.interpret(node.right)
-
-        switch(node.op){
-            case 'not': return !a
-            case '-': return -a
-            default: {
-                throw new Error(`Invalid operator: ${node.op}`)
-            }
-        }
+        const name = node.op === TokenType.MINUS ? TokenType.UNARY_MINUS : node.op
+        return this.evaluateCall({ target: { name }, args: [node.right] })
     }
     this.evaluateBlock = function(node){
         env = new SymTab(env)

@@ -14,6 +14,7 @@ const TokenType = Object.freeze({
     GE: '>=',
     PLUS: '+',
     MINUS: '-',
+    UNARY_MINUS: 'unary_-',
     MUL: '*',
     POW: '**',
     DIV: '/',
@@ -84,7 +85,7 @@ function Tokenizer(inp, options){
         let [type, ch, loc] = options
         loc = ignoreLoc ? L : loc || ctx.loc()
 
-        return typeof ch !== 'undefined' ? new Token(ch, type, loc) : new Token(type, type, loc)
+        return ch !== undefined ? new Token(ch, type, loc) : new Token(type, type, loc)
     }
     const makeNumber = (ch) => {
         let buf = ch

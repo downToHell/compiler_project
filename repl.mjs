@@ -20,14 +20,19 @@ sym.addSymbol('print_bool', (b) => console.log(b))
 sym.addSymbol('clear', () => console.clear())
 sym.addSymbol('exit', () => process.exit())
 
-while (true){
-    const command = await repl('>>> ')
+const interpret = (code) => {
+    const scn = new Tokenizer(code)
+    const parser = new Parser(scn.tokens())
+    const interpreter = new Interpreter(sym)
+    return interpreter.interpret(parser.parseExpression())
+}
 
-    try {
-        const scn = new Tokenizer(command)
-        const parser = new Parser(scn.tokens())
-        const interpreter = new Interpreter(sym)
-        console.log(interpreter.interpret(parser.parseExpression()))
+while (true){
+    const code = await repl('>>> ')
+
+    try {        
+        const res = interpret(code)
+        console.log(res === null || res === undefined ? 'unit' : res)
     } catch(e) {
         console.error(e.message)
     }
