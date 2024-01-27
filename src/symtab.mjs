@@ -10,6 +10,11 @@ function SymTab(parent){
         }
         locals[name] = value
     }
+    this.addSymbols = function(names, value){
+        for (const name of names){
+            this.addSymbol(name, value)
+        }
+    }
     this.setSymbol = function(name, value){
         if (typeof locals[name] === 'undefined'){
             throw new Error(`Undefined symbol: ${name}`)

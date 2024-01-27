@@ -13,8 +13,7 @@ const typecheck = (src) => {
 
 describe('Typechecker tests', function(){
     it('typechecks simple addition', function(){
-        const type = typecheck('1 + 2')
-        assert.ok(type === Int)
+        assert.ok(typecheck('1 + 2') === Int)
     })
 
     it('rejects invalid arithmetics', function(){
@@ -22,8 +21,7 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks logical expressions', function(){
-        const type = typecheck('3 != 3 or 3 < 5')
-        assert.ok(type === Bool)
+        assert.ok(typecheck('3 != 3 or 3 < 5') === Bool)
     })
 
     it('rejects invalid logical operands', function(){
@@ -31,13 +29,11 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks simple if-expression', function(){
-        const type = typecheck('if true then 3')
-        assert.ok(type === Unit)
+        assert.ok(typecheck('if true then 3') === Unit)
     })
 
     it('typechecks if-else expression', function(){
-        const type = typecheck('if 1 < 3 then 1 else 3')
-        assert.ok(type === Int)
+        assert.ok(typecheck('if 1 < 3 then 1 else 3') === Int)
     })
 
     it('rejects unmatched if-else types', function(){
@@ -45,13 +41,11 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks variable declaration', function(){
-        const type = typecheck('{ var x = 3; x }')
-        assert.ok(type === Int)
+        assert.ok(typecheck('{ var x = 3; x }') === Int)
     })
 
     it('typechecks variable assignment', function(){
-        const type = typecheck('{ var x = 3; x = 5 }')
-        assert.ok(type === Int)
+        assert.ok(typecheck('{ var x = 3; x = 5 }') === Int)
     })
 
     it('rejects reassignment with differing type', function(){
@@ -60,5 +54,17 @@ describe('Typechecker tests', function(){
 
     it('rejects unscoped variable', function(){
         assert.throws(() => typecheck('{ var x = 3; { var y = 0 } y }'))
+    })
+
+    it('typechecks built-in function calls', function(){
+        assert.ok(typecheck('print_int(3)') === Unit)
+        assert.ok(typecheck('{ var x = 3; print_int(x) }') === Unit)
+    })
+
+    it('rejects invalid function calls', function(){
+        assert.throws(() => typecheck('print_int()'))
+        assert.throws(() => typecheck('print_int(true)'))
+        assert.throws(() => typecheck('print_bool(3)'))
+        assert.throws(() => typecheck('print_int(while 3 < 5 do 3)'))
     })
 })

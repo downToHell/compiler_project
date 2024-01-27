@@ -1,44 +1,44 @@
+import * as ast from './ast.mjs'
 import { SymTab } from './symtab.mjs'
-import { Bool, Int, Unit } from './types.mjs'
-import {
-    Assignment,
-    BinaryExpr,
-    Block,
-    Declaration,
-    Identifier,
-    IfExpr,
-    Literal,
-    LogicalExpr,
-    WhileExpr
-} from './ast.mjs'
+import { 
+    ArithmeticOp,
+    Bool,
+    ComparisonOp,
+    EqualityOp,
+    Int,
+    LogicalOp,
+    PrintBoolFn,
+    PrintIntFn,
+    Unit
+} from './types.mjs'
 import { TokenType } from './tokenizer.mjs'
 
-const ARITHMETIC_OPS = Object.freeze([
-    TokenType.PLUS, TokenType.MINUS,
-    TokenType.MUL, TokenType.DIV,
-    TokenType.MOD, TokenType.POW
-])
-const EQUALITY_OPS = Object.freeze([TokenType.EQ_EQ, TokenType.NE])
-const LOGICAL_OPS = Object.freeze([TokenType.AND, TokenType.OR])
-const COMPARISON_OPS = Object.freeze([
-    TokenType.LT, TokenType.LE,
-    TokenType.GT, TokenType.GE
-])
+const ARITHMETIC_OPS = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.DIV, TokenType.MOD, TokenType.POW]
+const EQUALITY_OPS = [TokenType.EQ_EQ, TokenType.NE]
+const LOGICAL_OPS = [TokenType.AND, TokenType.OR]
+const COMPARISON_OPS = [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE]
 
 function TypeChecker(){
     let env = new SymTab()
+    env.addSymbols(ARITHMETIC_OPS, ArithmeticOp)
+    env.addSymbols(EQUALITY_OPS, EqualityOp)
+    env.addSymbols(LOGICAL_OPS, LogicalOp)
+    env.addSymbols(COMPARISON_OPS, ComparisonOp)
+    env.addSymbol('print_int', PrintIntFn)
+    env.addSymbol('print_bool', PrintBoolFn)
 
     this.typecheck = function(node){
         switch(node.constructor){
-            case Literal: return this.typeOfLiteral(node)
-            case Identifier: return env.getSymbol(node.name)
-            case BinaryExpr: return this.typeOfBinaryExpr(node)
-            case LogicalExpr: return this.typeOfLogicalExpr(node)
-            case Block: return this.typeOfBlock(node)
-            case IfExpr: return this.typeOfIfExpr(node)
-            case WhileExpr: return this.typeOfWhileExpr(node)
-            case Assignment: return this.typeOfAssignment(node)
-            case Declaration: return this.typeOfDeclaration(node)
+            case ast.Literal: return this.typeOfLiteral(node)
+            case ast.Identifier: return env.getSymbol(node.name)
+            case ast.BinaryExpr: return this.typeOfBinaryExpr(node)
+            case ast.LogicalExpr: return this.typeOfBinaryExpr(node)
+            case ast.Call: return this.typeOfCall(node)
+            case ast.Block: return this.typeOfBlock(node)
+            case ast.IfExpr: return this.typeOfIfExpr(node)
+            case ast.WhileExpr: return this.typeOfWhileExpr(node)
+            case ast.Assignment: return this.typeOfAssignment(node)
+            case ast.Declaration: return this.typeOfDeclaration(node)
             default: throw new Error(`Unknown ast node: ${node.constructor.name}`)
         }
     }
@@ -53,40 +53,16 @@ function TypeChecker(){
         throw new Error(`Unknown literal type: ${node.value}`)
     }
     this.typeOfBinaryExpr = function(node){
-        const a = this.typecheck(node.left)
-        const b = this.typecheck(node.right)
-
-        if (ARITHMETIC_OPS.includes(node.op)){
-            if (!(a === Int && b === Int)){
-                throw new Error(`Operand '${node.op}' expected to Ints, got ${a} and ${b}`)
-            }
-            return Int
-        }
-        throw new Error(`Invalid operant '${node.op}' for binary expression`)
+        return this.typeOfCall({ target: { name: node.op }, args: [node.left, node.right] })
     }
-    this.typeOfLogicalExpr = function(node){
-        const a = this.typecheck(node.left)
-        const b = this.typecheck(node.right)
+    this.typeOfCall = function(node){
+        const fun = env.getSymbol(node.target.name)
+        const args = node.args.map(f => this.typecheck(f))
 
-        if (COMPARISON_OPS.includes(node.op)){
-            if (!(a === Int && b === Int)){
-                throw new Error(`Operand '${node.op}' expected to Ints, got ${a} and ${b}`)
-            }
-            return Bool
-        } else if (EQUALITY_OPS.includes(node.op)){
-            if (a === Int && b === Int){
-                return Bool
-            } else if (a === Bool && b === Bool){
-                return Bool
-            }
-            throw new Error(`Operand '${node.op}' expected two matching types, got ${a} and ${b}`)
-        } else if (LOGICAL_OPS.includes(node.op)){
-            if (!(a === Bool && b === Bool)){
-                throw new Error(`Operand '${node.op}' expected to Booleans, got ${a} and ${b}`)
-            }
-            return Bool
+        if (!fun.accept(...args)){
+            throw new Error(`Function '${node.target.name}' expected ${fun.argStr()}, got (${args.join(', ')})`)
         }
-        throw new Error(`Invalid operant '${node.op}' for logical expression`)
+        return fun.ret
     }
     this.typeOfBlock = function(node){
         env = new SymTab(env)
