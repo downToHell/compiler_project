@@ -131,22 +131,17 @@ function Parser(tokens){
         return expr
     }
     this.parseLeftPrecedenceExpr = function(){
-        const ops = [...left_precedence_ops]
-        const current_level = ops.shift()
-
-        return this.__parseLeftPrecedenceExpr(current_level, ops)
+        return this.__parseLeftPrecedenceExpr(0, left_precedence_ops)
     }
     this.__parseLeftPrecedenceExpr = function(current_level, more){
-        const next_level = more.shift()
-        const mm = [...more]
-        
-        let left = next_level ? this.__parseLeftPrecedenceExpr(next_level, more) : this.parseUnaryExpression()
+        const next_level = current_level + 1
+        let left = next_level < more.length ? this.__parseLeftPrecedenceExpr(next_level, more) : this.parseUnaryExpression()
 
-        while (match(...current_level.types)){
+        while (match(...more[current_level].types)){
             const op = advance()
-            const right = next_level ? this.__parseLeftPrecedenceExpr(next_level, mm) : this.parseUnaryExpression()
+            const right = next_level < more.length ? this.__parseLeftPrecedenceExpr(next_level, more) : this.parseUnaryExpression()
 
-            left = new current_level.produces(left, op.value, right)
+            left = new more[current_level].produces(left, op.value, right)
         }
         return left
     }
