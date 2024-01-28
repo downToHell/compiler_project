@@ -13,7 +13,8 @@ import {
 } from './types.mjs'
 import { TokenType } from './tokenizer.mjs'
 
-const ARITHMETIC_OPS = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.DIV, TokenType.MOD, TokenType.POW]
+const ARITHMETIC_OPS = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL,
+                        TokenType.DIV, TokenType.MOD, TokenType.POW]
 const EQUALITY_OPS = [TokenType.EQ_EQ, TokenType.NE]
 const LOGICAL_OPS = [TokenType.AND, TokenType.OR]
 const COMPARISON_OPS = [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE]
@@ -39,6 +40,7 @@ function TypeChecker(){
             case ast.WhileExpr: return this.typeOfWhileExpr(node)
             case ast.Assignment: return this.typeOfAssignment(node)
             case ast.Declaration: return this.typeOfDeclaration(node)
+            case ast.TypeExpr: return this.typeOfTypeExpr(node)
             default: throw new Error(`Unknown ast node: ${node.constructor.name}`)
         }
     }
@@ -111,6 +113,15 @@ function TypeChecker(){
             throw new Error(`Reassignment of ${node.target.name} with type '${type}' is not allowed`)
         }
         env.setSymbol(node.target.name, type)
+        return type
+    }
+    this.typeOfTypeExpr = function(node){
+        const type = this.typecheck(node.expr)
+
+        // TODO: only works for BasicTypes! Implement FunType?
+        if (type.name !== node.type.name){
+            throw new Error(`Invalid type expression: expected ${node.type.name}, got ${type}`)
+        }
         return type
     }
 }

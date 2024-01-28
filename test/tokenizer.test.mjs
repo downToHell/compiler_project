@@ -84,6 +84,19 @@ describe('Tokenizer tests', function(){
         ])
     })
 
+    it('recognizes type expressions', function(){
+        const scn = new Tokenizer('var x: Int = 3', opt)
+
+        assert.deepStrictEqual(scn.tokens(), [
+            makeToken('var', TokenType.VAR),
+            makeToken('x', TokenType.IDENTIFIER),
+            makeToken(':', TokenType.COLON),
+            makeToken('Int', TokenType.IDENTIFIER),
+            makeToken('=', TokenType.EQ),
+            makeToken(3, TokenType.INT_LITERAL)
+        ])
+    })
+
     it('recognizes comparisons', function(){
         const scn = new Tokenizer('< <= > >= = ==', opt)
 

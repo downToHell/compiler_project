@@ -56,3 +56,8 @@ export function Declaration(ident, initializer){
 export function Block(exprs){
     this.exprs = exprs
 }
+
+export function TypeExpr(type, expr){
+    this.type = type
+    this.expr = expr
+}

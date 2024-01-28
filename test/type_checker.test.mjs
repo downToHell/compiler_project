@@ -56,6 +56,18 @@ describe('Typechecker tests', function(){
         assert.throws(() => typecheck('{ var x = 3; { var y = 0 } y }'))
     })
 
+    it('typechecks typed variable', function(){
+        assert.ok(typecheck('var x: Int = 5 + 6') === Int)
+        assert.ok(typecheck('var y: Bool = true') === Bool)
+        assert.ok(typecheck('var z: Unit = while 2 > 5 do print_int(1)') === Unit)
+    })
+
+    it('rejects invalid type expression', function(){
+        assert.throws(() => typecheck('var x: Int = true'))
+        assert.throws(() => typecheck('var y: Bool = 1'))
+        assert.throws(() => typecheck('var z: Unit = if 3 then 2 else 1'))
+    })
+
     it('typechecks built-in function calls', function(){
         assert.ok(typecheck('print_int(3)') === Unit)
         assert.ok(typecheck('{ var x = 3; print_int(x) }') === Unit)

@@ -12,6 +12,7 @@ import {
     IfExpr,
     Literal,
     LogicalExpr,
+    TypeExpr,
     UnaryExpr,
     WhileExpr
 } from '../src/ast.mjs'
@@ -241,6 +242,17 @@ describe('Parser tests', function(){
         assert.ok(expr instanceof Declaration)
         assert.ok(expr.ident instanceof Identifier)
         assert.ok(expr.initializer instanceof BinaryExpr)
+    })
+
+    it('accepts typed variable', function(){
+        let parser = makeParser('var x: Int = true')
+        let expr = parser.parseExpression()
+
+        assert.ok(expr instanceof Declaration)
+        assert.ok(expr.ident instanceof Identifier)
+        assert.ok(expr.initializer instanceof TypeExpr)
+        assert.ok(expr.initializer.type instanceof Identifier)
+        assert.ok(expr.initializer.expr instanceof Literal)
     })
 
     it('treats declaration as expression', function(){

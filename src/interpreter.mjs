@@ -1,18 +1,5 @@
+import * as ast from './ast.mjs'
 import { SymTab } from './symtab.mjs'
-import {
-    Assignment,
-    BinaryExpr,
-    Block,
-    Call,
-    Declaration,
-    Grouping,
-    Identifier,
-    IfExpr,
-    Literal,
-    LogicalExpr,
-    UnaryExpr, 
-    WhileExpr
-} from './ast.mjs'
 import { TokenType } from './tokenizer.mjs'
 
 function Interpreter(_env){
@@ -34,18 +21,19 @@ function Interpreter(_env){
 
     this.interpret = function(node){
         switch(node.constructor){
-            case Literal: return node.value
-            case Identifier: return env.getSymbol(node.name)
-            case BinaryExpr: return this.evaluateBinaryExpr(node)
-            case LogicalExpr: return this.evaluateLogicalExpr(node)
-            case UnaryExpr: return this.evaluateUnaryExpr(node)
-            case Grouping: return this.interpret(node.expr)
-            case Block: return this.evaluateBlock(node)
-            case IfExpr: return this.evaluateIfExpr(node)
-            case WhileExpr: return this.evaluateWhileExpression(node)
-            case Call: return this.evaluateCall(node)
-            case Declaration: return this.evaluateDeclaration(node)
-            case Assignment: return this.evaluateAssignment(node)
+            case ast.Literal: return node.value
+            case ast.Identifier: return env.getSymbol(node.name)
+            case ast.BinaryExpr: return this.evaluateBinaryExpr(node)
+            case ast.LogicalExpr: return this.evaluateLogicalExpr(node)
+            case ast.UnaryExpr: return this.evaluateUnaryExpr(node)
+            case ast.Grouping: return this.interpret(node.expr)
+            case ast.Block: return this.evaluateBlock(node)
+            case ast.IfExpr: return this.evaluateIfExpr(node)
+            case ast.WhileExpr: return this.evaluateWhileExpression(node)
+            case ast.Call: return this.evaluateCall(node)
+            case ast.Declaration: return this.evaluateDeclaration(node)
+            case ast.Assignment: return this.evaluateAssignment(node)
+            case ast.TypeExpr: return this.interpret(node.expr) // TODO: typechecking?
             default: {
                 throw new Error(`Unknown ast node: ${node.constructor.name}`)
             }

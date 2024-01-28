@@ -10,6 +10,7 @@ import {
     IfExpr,
     Literal,
     LogicalExpr,
+    TypeExpr,
     UnaryExpr,
     WhileExpr
 } from './ast.mjs'
@@ -88,9 +89,16 @@ function Parser(tokens){
     this.parseVarDeclaration = function(){
         expect(TokenType.VAR, `Expected ${TokenType.VAR}, got ${peek().type}`)
         const ident = this.parseIdentifier()
+        let type
+
+        if (match(TokenType.COLON)){
+            advance()
+            type = this.parseIdentifier()
+        }
         expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
         const initializer = this.__parseExpression()
-        return new Declaration(ident, initializer)
+
+        return new Declaration(ident, type ? new TypeExpr(type, initializer) : initializer)
     }
     this.parseWhileExpression = function(){
         expect(TokenType.WHILE, `Expected ${TokenType.WHILE}, got ${peek().type}`)
@@ -185,7 +193,7 @@ function Parser(tokens){
         } else if (match(TokenType.IDENTIFIER)){
             return this.parseIdentifier()
         }
-        throw new Error(`Expected one of ${[TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
+        throw new Error(`Expected one of ${[TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
     }
     this.parseGroup = function(){
         expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
