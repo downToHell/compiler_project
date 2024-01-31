@@ -114,12 +114,15 @@ function Parser(tokens){
         while (!match(TokenType.RBRACE) && !match(TokenType.END)){
             exprs.push(this.__parseExpression(peek().loc))
 
-            // TODO: insert literal with value null if final semicolon is present. See Task 6
             if (!match(TokenType.RBRACE) && !isBlock(exprs[exprs.length - 1])){
                 expect(TokenType.SEMICOLON, `Missing ${TokenType.SEMICOLON} at ${peek().type}`)
             } else if (match(TokenType.SEMICOLON)) {
                 advance()
             }
+        }
+
+        if (tokens[pos - 1].type === TokenType.SEMICOLON){
+            exprs.push(new Literal(null, tokens[pos - 1].loc))
         }
         expect(TokenType.RBRACE, `Missing ${TokenType.RBRACE} at ${peek().type}`)
         return new Block(exprs, loc)

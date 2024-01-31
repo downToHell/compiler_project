@@ -289,7 +289,12 @@ describe('Parser tests', function(){
 
     it('accepts optional semicolon after block', function(){
         let parser = makeParser('{ a = b + c; }')
-        assert.doesNotThrow(() => parser.parseExpression())
+        let expr = parser.parseExpression()
+        
+        assert.ok(expr instanceof Block)
+        assert.ok(expr.exprs[1] instanceof Literal)
+        assert.strictEqual(expr.exprs.length, 2)
+        assert.strictEqual(expr.exprs[1].value, null)
     })
 
     it('accepts complex blocks', function(){
