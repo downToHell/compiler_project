@@ -18,14 +18,15 @@ function IRGenerator(){
     const newLabel = () => new ir.Label(`L${next_label++}`)
 
     const visit = (node) => {
-        const pushBack = (i) => ins.push(i)
+        const emit = (i) => ins.push(i)
 
         switch (node.constructor){
-            case ast.Literal: return this.visitLiteral(node, pushBack)
+            case ast.Literal: return this.visitLiteral(node, emit)
             case ast.Identifier: return var_table.getSymbol(node.name)
-            case ast.BinaryExpr: return this.visitLeftRightExpr(node, pushBack)
-            case ast.LogicalExpr: return this.visitLeftRightExpr(node, pushBack)
-            case ast.IfExpr: return this.visitIfExpr(node, pushBack)
+            case ast.BinaryExpr: return this.visitLeftRightExpr(node, emit)
+            case ast.LogicalExpr: return this.visitLeftRightExpr(node, emit)
+            case ast.IfExpr: return this.visitIfExpr(node, emit)
+            case ast.WhileExpr: return this.visitWhileExpr(node, emit)
             default: {
                 throw new Error(`Unknown ast node: ${node.constructor.name}`)
             }
@@ -42,20 +43,27 @@ function IRGenerator(){
         visit(node)
         return ins
     }
-    this.visitLiteral = function(node, callback){
+    this.visitLiteral = function(node, emit){
         const _var = newVar()
-        callback(new ir.LoadIntConst(node.value, _var))
+        
+        if (typeof node.value === 'number'){
+            emit(new ir.LoadIntConst(node.value, _var))
+        } else if (typeof node.value === 'boolean'){
+            emit(new ir.LoadBoolConst(node.value, _var))
+        } else {
+            throw new Error(`Invalid literal type: ${typeof node.value}`)
+        }
         return _var
     }
-    this.visitLeftRightExpr = function(node, callback){
+    this.visitLeftRightExpr = function(node, emit){
         const dest = newVar()
-        callback(new ir.Call(node.op, [
+        emit(new ir.Call(node.op, [
             visit(node.left),
             visit(node.right)
         ], dest))
         return dest
     }
-    this.visitIfExpr = function(node, callback){
+    this.visitIfExpr = function(node, emit){
         const _then = newLabel()
         let _else
 
@@ -63,19 +71,35 @@ function IRGenerator(){
         const _end = newLabel()
 
         const var_cond = visit(node.cond)
-        callback(new ir.CondJump(var_cond, _then, _else))
+        emit(new ir.CondJump(var_cond, _then, _else))
 
-        callback(_then)
+        emit(_then)
         const then_res = visit(node.body)
-        callback(new ir.Jump(_end))
+        emit(new ir.Jump(_end))
         
         if (node.elsz){
-            callback(_else)
+            emit(_else)
             const else_res = visit(node.elsz)
-            callback(new ir.Copy(else_res, then_res))
+            emit(new ir.Copy(else_res, then_res))
         }
-        callback(_end)
+        emit(_end)
         return then_res
+    }
+    this.visitWhileExpr = function(node, emit){
+        const begin = newLabel()
+        const body = newLabel()
+        const end = newLabel()
+
+        emit(begin)
+        const var_cond = visit(node.cond)
+        emit(new ir.CondJump(var_cond, body, end))
+
+        emit(body)
+        const body_res = visit(node.body)
+        emit(new ir.Jump(begin))
+
+        emit(end)
+        return body_res
     }
 }
 
