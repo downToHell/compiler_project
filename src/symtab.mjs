@@ -39,6 +39,11 @@ function SymTab(parent){
     this.deleteSymbol = function(name){
         delete locals[name]
     }
+    this.clear = function(){
+        for (const k in locals){
+            this.deleteSymbol(k)
+        }
+    }
 }
 
 export { SymTab }
