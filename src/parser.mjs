@@ -1,4 +1,4 @@
-import { EOF, TokenType } from './tokenizer.mjs'
+import { Token, TokenType } from './tokenizer.mjs'
 import { 
     Assignment,
     BinaryExpr,
@@ -14,6 +14,7 @@ import {
     UnaryExpr,
     WhileExpr
 } from './ast.mjs'
+import { SourceLocation } from './source_context.mjs'
 
 function Parser(tokens){
     let pos = 0
@@ -27,11 +28,15 @@ function Parser(tokens){
         { types: [TokenType.POW], produces: BinaryExpr }
     ]
 
+    const EOF = () => {
+        const loc = tokens.length > 0 ? tokens[tokens.length - 1].loc : new SourceLocation(0, 0)
+        return new Token('', TokenType.END, loc)
+    }
     const peek = () => {
         if (pos < tokens.length){
             return tokens[pos]
         }
-        return EOF
+        return EOF()
     }
     const advance = () => {
         const token = peek()
@@ -137,7 +142,7 @@ function Parser(tokens){
             if (expr instanceof Identifier){
                 return new Assignment(expr, value, loc)
             }
-            throw new Error('Invalid assignment target!')
+            throw new Error(`${loc}: Invalid assignment target!`)
         }
         return expr
     }
@@ -196,7 +201,7 @@ function Parser(tokens){
         } else if (match(TokenType.IDENTIFIER)){
             return this.parseIdentifier(loc)
         }
-        throw new Error(`Expected one of ${[TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
+        throw new Error(`${loc}: Expected one of ${[TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
     }
     this.parseGroup = function(loc){
         expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)

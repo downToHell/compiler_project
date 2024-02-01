@@ -181,6 +181,4 @@ function Tokenizer(inp, options){
     }
 }
 
-const EOF = new Token('', TokenType.END, L)
-
-export { TokenType, Token, Tokenizer, EOF }
+export { TokenType, Token, Tokenizer }
