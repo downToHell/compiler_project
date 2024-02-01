@@ -41,6 +41,14 @@ describe('Interpreter tests', function(){
         assert.strictEqual(value, 0)
     })
 
+    it('evaluates block expressions', function(){
+        let value = interpret('{ var x = 5; x + 10 }')
+        assert.strictEqual(value, 15)
+
+        value = interpret('{ var y = 5; y + 10; }')
+        assert.strictEqual(value, null)
+    })
+
     it('evaluates logical operations', function(){
         let value = interpret('3 < 5')
         assert.strictEqual(value, true)
