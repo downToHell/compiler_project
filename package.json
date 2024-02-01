@@ -13,5 +13,8 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "mocha": "^10.2.0"
+  },
+  "dependencies": {
+    "readline-sync": "^1.4.10"
   }
 }
