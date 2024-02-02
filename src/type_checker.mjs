@@ -19,14 +19,14 @@ const EQUALITY_OPS = [TokenType.EQ_EQ, TokenType.NE]
 const LOGICAL_OPS = [TokenType.AND, TokenType.OR]
 const COMPARISON_OPS = [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE]
 
-function TypeChecker(){
-    let env = new SymTab()
-    env.addSymbols(ARITHMETIC_OPS, ArithmeticOp)
-    env.addSymbols(EQUALITY_OPS, EqualityOp)
-    env.addSymbols(LOGICAL_OPS, LogicalOp)
-    env.addSymbols(COMPARISON_OPS, ComparisonOp)
-    env.addSymbol('print_int', PrintIntFn)
-    env.addSymbol('print_bool', PrintBoolFn)
+function TypeChecker(_env){
+    let env = _env || new SymTab()
+    env.addIfAbsent(ARITHMETIC_OPS, ArithmeticOp)
+    env.addIfAbsent(EQUALITY_OPS, EqualityOp)
+    env.addIfAbsent(LOGICAL_OPS, LogicalOp)
+    env.addIfAbsent(COMPARISON_OPS, ComparisonOp)
+    env.addIfAbsent('print_int', PrintIntFn)
+    env.addIfAbsent('print_bool', PrintBoolFn)
 
     this.typecheck = function(node){
         switch(node.constructor){

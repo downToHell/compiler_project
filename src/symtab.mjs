@@ -4,45 +4,45 @@ function SymTab(parent){
     this.getParent = function(){
         return parent
     }
-    this.addIfAbsent = function(name, value){
-        if (locals[name] === undefined){
-            locals[name] = value
+    this.addIfAbsent = function(sym, value){
+        if (Array.isArray(sym)){
+            sym.forEach(n => this.addIfAbsent(n, value))
+            return
+        }
+        if (locals[sym] === undefined){
+            locals[sym] = value
         }
     }
-    this.addSymbol = function(name, value){
-        if (locals[name] !== undefined){
-            throw new Error(`Symbol ${name} already defined`)
+    this.addSymbol = function(sym, value){
+        if (locals[sym] !== undefined){
+            throw new Error(`Symbol ${sym} already defined`)
         }
-        locals[name] = value
+        locals[sym] = value
     }
-    this.addSymbols = function(names, value){
-        for (const name of names){
-            this.addSymbol(name, value)
-        }
+    this.addSymbols = function(sym, value){
+        sym.forEach(s => this.addSymbol(s, value))
     }
-    this.setSymbol = function(name, value){
-        if (locals[name] !== undefined){
-            locals[name] = value    
+    this.setSymbol = function(sym, value){
+        if (locals[sym] !== undefined){
+            locals[sym] = value    
         } else if (parent){
-            parent.setSymbol(name, value)
+            parent.setSymbol(sym, value)
         } else {
-            throw new Error(`Undefined symbol: ${name}`)
+            throw new Error(`Undefined symbol: ${sym}`)
         }
     }
-    this.getSymbol = function(name){
-        const sym = locals[name]
+    this.getSymbol = function(sym){
+        const val = locals[sym]
 
-        if (sym !== undefined) return sym
-        if (parent) return parent.getSymbol(name)
-        throw new Error(`Undefined symbol: ${name}`)
+        if (val !== undefined) return val
+        if (parent) return parent.getSymbol(sym)
+        throw new Error(`Undefined symbol: ${sym}`)
     }
-    this.deleteSymbol = function(name){
-        delete locals[name]
+    this.deleteSymbol = function(sym){
+        delete locals[sym]
     }
     this.clear = function(){
-        for (const k in locals){
-            this.deleteSymbol(k)
-        }
+        Object.keys(locals).forEach(sym => this.deleteSymbol(sym))
     }
 }
 

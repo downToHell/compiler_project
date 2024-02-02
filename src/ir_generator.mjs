@@ -3,13 +3,13 @@ import * as ir from './ir.mjs'
 import { SymTab } from './symtab.mjs'
 import { TokenType } from './tokenizer.mjs'
 
-function IRGenerator(){
+function IRGenerator(_env){
     let next_var = 1
     let next_label = 1
 
-    const var_table = new SymTab()
+    const env = _env || new SymTab()
     const var_unit = new ir.IRVar('unit')
-    var_table.addSymbol('unit', var_unit)
+    env.addIfAbsent('unit', var_unit)
 
     const ins = []
 
@@ -17,7 +17,7 @@ function IRGenerator(){
     const newVar = () => {
         const var_name = `x${next_var++}` 
         const _var = new ir.IRVar(var_name)
-        var_table.addSymbol(var_name, _var)
+        env.addSymbol(var_name, _var)
         return _var
     }
     const newLabel = () => new ir.Label(`L${next_label++}`)
@@ -25,7 +25,7 @@ function IRGenerator(){
     const visit = (node) => {
         switch (node.constructor){
             case ast.Literal: return this.visitLiteral(node)
-            case ast.Identifier: return var_table.getSymbol(node.name)
+            case ast.Identifier: return env.getSymbol(node.name)
             case ast.BinaryExpr: return this.visitBinaryExpr(node)
             case ast.LogicalExpr: return this.visitLogicalExpr(node)
             case ast.UnaryExpr: return this.visitUnaryExpr(node)
@@ -44,12 +44,7 @@ function IRGenerator(){
     }
 
     this.generate = function(node){
-        // clear from previous call
         ins.length = 0
-        var_table.clear()
-        next_label = 1
-        next_var = 1
-
         visit(node)
         return ins
     }
@@ -182,11 +177,11 @@ function IRGenerator(){
     }
     this.visitDeclaration = function(node){
         const _var = visit(node.initializer)
-        var_table.addSymbol(node.ident.name, _var)
+        env.addSymbol(node.ident.name, _var)
         return _var
     }
     this.visitAssignment = function(node){
-        const _var = var_table.getSymbol(node.target.name)
+        const _var = env.getSymbol(node.target.name)
         emit(new ir.Copy(visit(node.expr), _var))
         return _var
     }
