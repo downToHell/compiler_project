@@ -8,7 +8,7 @@ const typecheck = (src) => {
     const scn = new Tokenizer(src)
     const parser = new Parser(scn.tokens())
     const typechecker = new TypeChecker()
-    return typechecker.typecheck(parser.parseExpression())
+    return typechecker.typecheck(parser.parse()[0])
 }
 
 describe('Typechecker tests', function(){

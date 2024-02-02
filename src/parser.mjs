@@ -72,12 +72,16 @@ function Parser(tokens){
         return expr instanceof Block
     }
 
-    this.parseExpression = function(){
-        const expr = this.__parseExpression(peek().loc)
+    this.parse = function(){
+        let exprs = []
+
+        do {
+            exprs.push(this.parseExpression(peek().loc))
+        } while (consume(TokenType.SEMICOLON))
         expect(TokenType.END, `EOF expected, got ${peek().type}`)
-        return expr
+        return exprs
     }
-    this.__parseExpression = function(loc){
+    this.parseExpression = function(loc){
         if (match(TokenType.IF)) return this.parseIfExpression(loc)
         if (match(TokenType.VAR)) return this.parseVarDeclaration(loc)
         if (match(TokenType.WHILE)) return this.parseWhileExpression(loc)
@@ -89,11 +93,11 @@ function Parser(tokens){
         const cond = this.parseLeftPrecedenceExpr(peek().loc)
         expect(TokenType.THEN, `Expected ${TokenType.THEN}, got ${peek().type}`)
 
-        const body = this.__parseExpression(peek().loc)
+        const body = this.parseExpression(peek().loc)
         let elsz
         
         if (consume(TokenType.ELSE)){
-            elsz = this.__parseExpression(peek().loc)
+            elsz = this.parseExpression(peek().loc)
         }
         return new IfExpr(cond, body, elsz, loc)
     }
@@ -106,7 +110,7 @@ function Parser(tokens){
             type = this.parseIdentifier(peek().loc)
         }
         expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
-        const initializer = this.__parseExpression(peek().loc)
+        const initializer = this.parseExpression(peek().loc)
 
         return new Declaration(ident, type ? new TypeExpr(type, initializer, loc) : initializer, loc)
     }
@@ -114,7 +118,7 @@ function Parser(tokens){
         expect(TokenType.WHILE, `Expected ${TokenType.WHILE}, got ${peek().type}`)
         const cond = this.parseLeftPrecedenceExpr(peek().loc)
         expect(TokenType.DO, `Expected ${TokenType.DO}, got ${peek().type}`)
-        const body = this.__parseExpression(peek().loc)
+        const body = this.parseExpression(peek().loc)
         return new WhileExpr(cond, body, loc)
     }
     this.parseBlockExpression = function(loc){
@@ -122,7 +126,7 @@ function Parser(tokens){
         const exprs = []
         
         while (!match(TokenType.RBRACE) && !match(TokenType.END)){
-            exprs.push(this.__parseExpression(peek().loc))
+            exprs.push(this.parseExpression(peek().loc))
 
             if (!match(TokenType.RBRACE) && !isBlock(exprs[exprs.length - 1])){
                 expect(TokenType.SEMICOLON, `Missing ${TokenType.SEMICOLON} at ${peek().type}`)
@@ -141,7 +145,7 @@ function Parser(tokens){
         const expr = this.parseLeftPrecedenceExpr(peek().loc)
 
         if (consume(TokenType.EQ)){
-            const value = this.__parseExpression(peek().loc)
+            const value = this.parseExpression(peek().loc)
 
             if (expr instanceof Identifier){
                 return new Assignment(expr, value, loc)
@@ -180,10 +184,10 @@ function Parser(tokens){
             const args = []
 
             if (!match(TokenType.RPAREN)){
-                args.push(this.__parseExpression(peek().loc))
+                args.push(this.parseExpression(peek().loc))
 
                 while (consume(TokenType.COMMA)){
-                    args.push(this.__parseExpression(peek().loc))
+                    args.push(this.parseExpression(peek().loc))
                 }
             }
             expect(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
@@ -207,7 +211,7 @@ function Parser(tokens){
     }
     this.parseGroup = function(loc){
         expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
-        const expr = this.__parseExpression(peek().loc)
+        const expr = this.parseExpression(peek().loc)
         expect(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
         return new Grouping(expr, loc)
     }

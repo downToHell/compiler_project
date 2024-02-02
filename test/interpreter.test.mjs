@@ -12,7 +12,7 @@ const interpret = (src) => {
     const scn = new Tokenizer(src, { ignoreLoc: true })
     const parser = new Parser(scn.tokens())
     const interpreter = new Interpreter(symtab)
-    return interpreter.interpret(parser.parseExpression())
+    return interpreter.interpret(parser.parse()[0])
 }
 
 describe('Interpreter tests', function(){

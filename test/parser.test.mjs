@@ -17,6 +17,13 @@ import {
     WhileExpr
 } from '../src/ast.mjs'
 
+Array.prototype.first = function(){
+    if (this.length == 0){
+        throw new Error('No such element')
+    }
+    return this[0]
+}
+
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
     return new Parser(scn.tokens())
@@ -26,17 +33,22 @@ describe('Parser tests', function(){
 
     it('empty input', function(){
         let parser = makeParser('')
-        assert.throws(() => parser.parseExpression())
+        assert.throws(() => parser.parse())
     })
 
     it('rejects superfluous input', function(){
         let parser = makeParser('1 + 2 8')
-        assert.throws(() => parser.parseExpression())
+        assert.throws(() => parser.parse())
+    })
+
+    it('accepts multiple top-level expressions', function(){
+        let parser = makeParser('1 + 2; 3 * 4')
+        assert.doesNotThrow(() => parser.parse())
     })
 
     it('accepts simple addition', function(){
         let parser = makeParser('1 + 3 - 5')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof BinaryExpr)
         assert.ok(expr.left instanceof BinaryExpr)
@@ -52,7 +64,7 @@ describe('Parser tests', function(){
 
     it('accepts simple multiplication', function(){
         let parser = makeParser('1 - 2 * 3')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof BinaryExpr)
         assert.ok(expr.left instanceof Literal)
@@ -68,7 +80,7 @@ describe('Parser tests', function(){
 
     it('accepts power expressions', function(){
         let parser = makeParser('1 + 2 * 3 ** 5')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof BinaryExpr)
         assert.ok(expr.left instanceof Literal)
@@ -88,7 +100,7 @@ describe('Parser tests', function(){
 
     it('accepts grouped expressions', function(){
         let parser = makeParser('(1 - 2) / 3')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof BinaryExpr)
         assert.ok(expr.left instanceof Grouping)
@@ -105,7 +117,7 @@ describe('Parser tests', function(){
 
     it('accepts negated expressions', function(){
         let parser = makeParser('-5')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof UnaryExpr)
         assert.ok(expr.right instanceof Literal)
@@ -115,7 +127,7 @@ describe('Parser tests', function(){
 
     it('accepts double negation', function(){
         let parser = makeParser('not not 8')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof UnaryExpr)
         assert.ok(expr.right instanceof UnaryExpr)
@@ -127,7 +139,7 @@ describe('Parser tests', function(){
 
     it('accepts identifiers in arithmetic op', function(){
         let parser = makeParser('a + b * c')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof BinaryExpr)
         assert.ok(expr.left instanceof Identifier)
@@ -143,7 +155,7 @@ describe('Parser tests', function(){
 
     it('accepts logical expressions', function(){
         let parser = makeParser('a or b and c')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof LogicalExpr)
         assert.ok(expr.left instanceof Identifier)
@@ -157,7 +169,7 @@ describe('Parser tests', function(){
 
     it('accepts comparison', function(){
         let parser = makeParser('a < b and b != c')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof LogicalExpr)
         assert.ok(expr.left instanceof LogicalExpr)
@@ -177,7 +189,7 @@ describe('Parser tests', function(){
 
     it('accepts assignment expression', function(){
         let parser = makeParser('x = 3 + 5')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof Assignment)
         assert.ok(expr.target instanceof Identifier)
@@ -192,12 +204,12 @@ describe('Parser tests', function(){
 
     it('rejects invalid assignment', function(){
         let parser = makeParser('3 = 5')
-        assert.throws(() => parser.parseExpression())
+        assert.throws(() => parser.parse())
     })
 
     it('accepts if expressions', function(){
         let parser = makeParser('if true then b + c else x * y')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof IfExpr)
         assert.ok(expr.cond instanceof Literal)
@@ -214,7 +226,7 @@ describe('Parser tests', function(){
 
     it('treats else as optional', function(){
         let parser = makeParser('if a then a + 5')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof IfExpr)
         assert.ok(expr.cond instanceof Identifier)
@@ -223,12 +235,12 @@ describe('Parser tests', function(){
 
     it('rejects assignment in if', function(){
         let parser = makeParser('if a = b then x + y')
-        assert.throws(() => parser.parseExpression())
+        assert.throws(() => parser.parse())
     })
 
     it('accepts function calls', function(){
         let parser = makeParser('f(x, y + z)')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
         
         assert.ok(expr instanceof Call)
         assert.strictEqual(expr.target.name, 'f')
@@ -237,7 +249,7 @@ describe('Parser tests', function(){
 
     it('accepts variable declaration', function(){
         let parser = makeParser('var x = 123 + 4')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof Declaration)
         assert.ok(expr.ident instanceof Identifier)
@@ -246,7 +258,7 @@ describe('Parser tests', function(){
 
     it('accepts typed variable', function(){
         let parser = makeParser('var x: Int = true')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof Declaration)
         assert.ok(expr.ident instanceof Identifier)
@@ -257,7 +269,7 @@ describe('Parser tests', function(){
 
     it('treats declaration as expression', function(){
         let parser = makeParser('(var x = 123) + 7')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof BinaryExpr)
         assert.ok(expr.left instanceof Grouping)
@@ -266,22 +278,22 @@ describe('Parser tests', function(){
 
     it('rejects declaration without initializer', function(){
         let parser = makeParser('var x')
-        assert.throws(() => parser.parseExpression())
+        assert.throws(() => parser.parse())
     })
 
     it('rejects invalid var identifier', function(){
         let parser = makeParser('var 3 = 5')
-        assert.throws(() => parser.parseExpression())
+        assert.throws(() => parser.parse())
     })
 
     it('accepts empty block', function(){
         let parser = makeParser('{ }')
-        assert.doesNotThrow(() => parser.parseExpression())
+        assert.doesNotThrow(() => parser.parse())
     })
 
     it('accepts simple block', function(){
         let parser = makeParser('{ f(a); x = y; f(x) }')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof Block)
         assert.strictEqual(expr.exprs.length, 3)
@@ -289,7 +301,7 @@ describe('Parser tests', function(){
 
     it('accepts optional semicolon after block', function(){
         let parser = makeParser('{ a = b + c; }')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
         
         assert.ok(expr instanceof Block)
         assert.ok(expr.exprs[1] instanceof Literal)
@@ -299,33 +311,33 @@ describe('Parser tests', function(){
 
     it('accepts complex blocks', function(){
         let parser = makeParser('{ { a } { b } }')
-        assert.doesNotThrow(() => parser.parseExpression())
+        assert.doesNotThrow(() => parser.parse())
 
         parser = makeParser('{ a b }')
-        assert.throws(() => parser.parseExpression())
+        assert.throws(() => parser.parse())
 
         parser = makeParser('{ if true then { a } b }')
-        assert.doesNotThrow(() => parser.parseExpression())
+        assert.doesNotThrow(() => parser.parse())
 
         parser = makeParser('{ if true then { a }; b }')
-        assert.doesNotThrow(() => parser.parseExpression())
+        assert.doesNotThrow(() => parser.parse())
 
         parser = makeParser('{ if true then { a } b c')
-        assert.throws(() => parser.parseExpression())
+        assert.throws(() => parser.parse())
 
         parser = makeParser('{ if true then { a } b; c }')
-        assert.doesNotThrow(() => parser.parseExpression())
+        assert.doesNotThrow(() => parser.parse())
 
         parser = makeParser('{ if true then { a } else { b } 3 }')
-        assert.doesNotThrow(() => parser.parseExpression())
+        assert.doesNotThrow(() => parser.parse())
 
         parser = makeParser('x = { { f(a) } { b } }')
-        assert.doesNotThrow(() => parser.parseExpression())
+        assert.doesNotThrow(() => parser.parse())
     })
 
     it('accepts while loops', function(){
         let parser = makeParser('while true do { x = x + 1; print_int(x) }')
-        let expr = parser.parseExpression()
+        let expr = parser.parse().first()
 
         assert.ok(expr instanceof WhileExpr)
         assert.ok(expr.cond instanceof Literal)
