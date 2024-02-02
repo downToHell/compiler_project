@@ -28,6 +28,7 @@ function IRGenerator(){
             case ast.Identifier: return var_table.getSymbol(node.name)
             case ast.BinaryExpr: return this.visitBinaryExpr(node)
             case ast.LogicalExpr: return this.visitLogicalExpr(node)
+            case ast.UnaryExpr: return this.visitUnaryExpr(node)
             case ast.IfExpr: return this.visitIfExpr(node)
             case ast.WhileExpr: return this.visitWhileExpr(node)
             case ast.Block: return this.visitBlock(node)
@@ -126,6 +127,12 @@ function IRGenerator(){
         emit(opEnd)
 
         return res
+    }
+    this.visitUnaryExpr = function(node){
+        const _var = newVar()
+        const right = visit(node.right)
+        emit(new ir.Call(node.op === TokenType.MINUS ? TokenType.UNARY_MINUS : node.op, [right], _var))
+        return _var
     }
     this.visitIfExpr = function(node){
         const _then = newLabel()
