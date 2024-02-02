@@ -7,8 +7,12 @@ function IRGenerator(){
     let next_label = 1
 
     const var_table = new SymTab()
+    const var_unit = new ir.IRVar('unit')
+    var_table.addSymbol('unit', var_unit)
+
     const ins = []
 
+    const emit = (i) => ins.push(i)
     const newVar = () => {
         const var_name = `x${next_var++}` 
         const _var = new ir.IRVar(var_name)
@@ -18,15 +22,19 @@ function IRGenerator(){
     const newLabel = () => new ir.Label(`L${next_label++}`)
 
     const visit = (node) => {
-        const emit = (i) => ins.push(i)
-
         switch (node.constructor){
-            case ast.Literal: return this.visitLiteral(node, emit)
+            case ast.Literal: return this.visitLiteral(node)
             case ast.Identifier: return var_table.getSymbol(node.name)
-            case ast.BinaryExpr: return this.visitLeftRightExpr(node, emit)
-            case ast.LogicalExpr: return this.visitLeftRightExpr(node, emit)
-            case ast.IfExpr: return this.visitIfExpr(node, emit)
-            case ast.WhileExpr: return this.visitWhileExpr(node, emit)
+            case ast.BinaryExpr:
+            case ast.LogicalExpr: return this.visitLeftRightExpr(node)
+            case ast.IfExpr: return this.visitIfExpr(node)
+            case ast.WhileExpr: return this.visitWhileExpr(node)
+            case ast.Block: return this.visitBlock(node)
+            case ast.TypeExpr:
+            case ast.Grouping: return visit(node.expr)
+            case ast.Declaration: return this.visitDeclaration(node)
+            case ast.Assignment: return this.visitAssignment(node)
+            case ast.Call: return this.visitCall(node)
             default: {
                 throw new Error(`Unknown ast node: ${node.constructor.name}`)
             }
@@ -43,7 +51,10 @@ function IRGenerator(){
         visit(node)
         return ins
     }
-    this.visitLiteral = function(node, emit){
+    this.visitLiteral = function(node){
+        if (node.value === null){
+            return var_unit
+        }
         const _var = newVar()
         
         if (typeof node.value === 'number'){
@@ -55,7 +66,7 @@ function IRGenerator(){
         }
         return _var
     }
-    this.visitLeftRightExpr = function(node, emit){
+    this.visitLeftRightExpr = function(node){
         const dest = newVar()
         emit(new ir.Call(node.op, [
             visit(node.left),
@@ -63,7 +74,7 @@ function IRGenerator(){
         ], dest))
         return dest
     }
-    this.visitIfExpr = function(node, emit){
+    this.visitIfExpr = function(node){
         const _then = newLabel()
         let _else
 
@@ -85,7 +96,7 @@ function IRGenerator(){
         emit(_end)
         return then_res
     }
-    this.visitWhileExpr = function(node, emit){
+    this.visitWhileExpr = function(node){
         const begin = newLabel()
         const body = newLabel()
         const end = newLabel()
@@ -100,6 +111,29 @@ function IRGenerator(){
 
         emit(end)
         return body_res
+    }
+    this.visitBlock = function(node){
+        let last
+
+        for (const k of node.exprs){
+            last = visit(k)
+        }
+        return last
+    }
+    this.visitDeclaration = function(node){
+        const _var = visit(node.initializer)
+        var_table.addSymbol(node.ident.name, _var)
+        return _var
+    }
+    this.visitAssignment = function(node){
+        const _var = var_table.getSymbol(node.target.name)
+        emit(new ir.Copy(visit(node.expr), _var))
+        return _var
+    }
+    this.visitCall = function(node){
+        const _var = newVar()
+        emit(new ir.Call(node.target.name, node.args.map(a => visit(a)), _var))
+        return _var
     }
 }
 
