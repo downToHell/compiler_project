@@ -55,7 +55,7 @@ function TypeChecker(_env){
         throw new Error(`${node.loc}: Unknown literal type: ${node.value}`)
     }
     this.typeOfBinaryExpr = function(node){
-        return this.typeOfCall({ target: { name: node.op }, args: [node.left, node.right] })
+        return this.typeOfCall({ target: { name: node.op }, args: [node.left, node.right], loc: node.loc })
     }
     this.typeOfCall = function(node){
         const fun = env.getSymbol(node.target.name)
