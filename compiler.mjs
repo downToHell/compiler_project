@@ -10,15 +10,28 @@ import { Interpreter } from './src/interpreter.mjs'
 import { IRGenerator } from './src/ir_generator.mjs'
 import { TypeChecker } from './src/type_checker.mjs'
 
+const tcSym = new SymTab()
+const ipSym = new SymTab()
+const genSym = new SymTab()
+
+ipSym.addSymbol('print_int', (i) => console.log(i))
+ipSym.addSymbol('print_bool', (b) => console.log(b))
+ipSym.addSymbol('clear', () => console.clear())
+ipSym.addSymbol('exit', () => process.exit())
+
 const help = () => console.error(`usage: ${path.basename(process.argv[1])} <command> [file/input]`)
 const parse = (source) => {
     const scn = new Tokenizer(source)
     const parser = new Parser(scn.tokens())
-    return parser.parseExpression()
+    return parser.parse()
 }
 const typecheck = (node) => {
-    const typechecker = new TypeChecker()
+    const typechecker = new TypeChecker(tcSym)
     return typechecker.typecheck(node)
+}
+const interpret = (node) => {
+    const interpreter = new Interpreter(ipSym)
+    return interpreter.interpret(node)
 }
 
 function main(){
@@ -57,8 +70,8 @@ function main(){
     
     switch(command){
         case 'ir': return generateIR(readSourceFile())
-        case 'interpret': return interpret(readSourceFile())
-        case 'repl': return repl()
+        case 'interpret': return run(readSourceFile())
+        case 'repl': while(true) run(rl.question('>>> '))
         //case 'compile': return compile()
         default: {
             console.error(`Command '${command}' is not supported!`)
@@ -68,10 +81,14 @@ function main(){
 }
 
 function generateIR(source){
-    const irGen = new IRGenerator()
+    const irGen = new IRGenerator(genSym)
 
     try {
-        const res = irGen.generate(typecheck(parse(source)))
+        const res = []
+
+        for (const expr of parse(source).filter(e => typecheck(e) && e)){
+            irGen.generate(expr).forEach(i => res.push(i))
+        }
         console.log(res.join(EOL))
         return 0
     } catch(e) {
@@ -80,28 +97,16 @@ function generateIR(source){
     }
 }
 
-function interpret(source, env){
-    const interpreter = new Interpreter(env)
-
+function run(source){
     try {
-        const res = interpreter.interpret(parse(source))
-        console.log(res === null || res === undefined ? 'unit' : res)
+        for (const expr of parse(source).filter(e => typecheck(e) && e)){
+            const res = interpret(expr)
+            console.log(res === null || res === undefined ? 'unit' : res)
+        }
         return 0
     } catch(e) {
         console.error(e.message)
         return 1
-    }
-}
-
-function repl(){
-    const sym = new SymTab()
-    sym.addSymbol('print_int', (i) => console.log(i))
-    sym.addSymbol('print_bool', (b) => console.log(b))
-    sym.addSymbol('clear', () => console.clear())
-    sym.addSymbol('exit', () => process.exit())
-
-    while (true){
-        interpret(rl.question('>>> '), sym)
     }
 }
 
