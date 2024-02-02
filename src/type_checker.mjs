@@ -52,7 +52,7 @@ function TypeChecker(){
         } else if (node.value === null){
             return Unit
         }
-        throw new Error(`Unknown literal type: ${node.value}`)
+        throw new Error(`${node.loc}: Unknown literal type: ${node.value}`)
     }
     this.typeOfBinaryExpr = function(node){
         return this.typeOfCall({ target: { name: node.op }, args: [node.left, node.right] })
@@ -62,7 +62,7 @@ function TypeChecker(){
         const args = node.args.map(f => this.typecheck(f))
 
         if (!fun.accept(...args)){
-            throw new Error(`Function '${node.target.name}' expected ${fun.argStr()}, got (${args.join(', ')})`)
+            throw new Error(`${node.loc}: Function '${node.target.name}' expected ${fun.argStr()}, got (${args.join(', ')})`)
         }
         return fun.ret
     }
@@ -80,7 +80,7 @@ function TypeChecker(){
         const a = this.typecheck(node.cond)
 
         if (a !== Bool){
-            throw new Error(`Condition of if-clause must be a Bool, got ${a} instead`)
+            throw new Error(`${node.loc}: Condition of if-clause must be a Bool, got ${a} instead`)
         } else if (typeof node.elsz === 'undefined'){
             return Unit
         }
@@ -88,7 +88,7 @@ function TypeChecker(){
         const c = this.typecheck(node.elsz)
 
         if (b !== c){
-            throw new Error('Types of then-clause and else-clause must match')
+            throw new Error(`${node.loc}: Types of then-clause and else-clause must match`)
         }
         return b
     }
@@ -96,7 +96,7 @@ function TypeChecker(){
         const a = this.typecheck(node.cond)
 
         if (a !== Bool){
-            throw new Error(`Condition of when expression must be a Bool, got ${a} instead`)
+            throw new Error(`${node.loc}: Condition of when expression must be a Bool, got ${a} instead`)
         }
         this.typecheck(node.body)
         return Unit
@@ -110,7 +110,7 @@ function TypeChecker(){
         const type = this.typecheck(node.expr)
 
         if (env.getSymbol(node.target.name) !== type){
-            throw new Error(`Reassignment of ${node.target.name} with type '${type}' is not allowed`)
+            throw new Error(`${node.loc}: Reassignment of ${node.target.name} with type '${type}' is not allowed`)
         }
         env.setSymbol(node.target.name, type)
         return type
@@ -120,7 +120,7 @@ function TypeChecker(){
 
         // TODO: only works for BasicTypes! Implement FunType?
         if (type.name !== node.type.name){
-            throw new Error(`Invalid type expression: expected ${node.type.name}, got ${type}`)
+            throw new Error(`${node.loc}: Invalid type expression: expected ${node.type.name}, got ${type}`)
         }
         return type
     }

@@ -8,12 +8,17 @@ import { Parser } from './src/parser.mjs'
 import { Tokenizer } from './src/tokenizer.mjs'
 import { Interpreter } from './src/interpreter.mjs'
 import { IRGenerator } from './src/ir_generator.mjs'
+import { TypeChecker } from './src/type_checker.mjs'
 
 const help = () => console.error(`usage: ${path.basename(process.argv[1])} <command> [file/input]`)
 const parse = (source) => {
     const scn = new Tokenizer(source)
     const parser = new Parser(scn.tokens())
     return parser.parseExpression()
+}
+const typecheck = (node) => {
+    const typechecker = new TypeChecker()
+    return typechecker.typecheck(node)
 }
 
 function main(){
@@ -66,7 +71,7 @@ function generateIR(source){
     const irGen = new IRGenerator()
 
     try {
-        const res = irGen.generate(parse(source))
+        const res = irGen.generate(typecheck(parse(source)))
         console.log(res.join(EOL))
         return 0
     } catch(e) {
