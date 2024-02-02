@@ -51,6 +51,13 @@ function Parser(tokens){
         }
         return false
     }
+    const consume = (type) => {
+        if (match(type)){
+            advance()
+            return true
+        }
+        return false
+    }
     const expect = (type, err) => {
         if (match(type)){
             return advance()
@@ -85,8 +92,7 @@ function Parser(tokens){
         const body = this.__parseExpression(peek().loc)
         let elsz
         
-        if (match(TokenType.ELSE)){
-            advance()
+        if (consume(TokenType.ELSE)){
             elsz = this.__parseExpression(peek().loc)
         }
         return new IfExpr(cond, body, elsz, loc)
@@ -96,8 +102,7 @@ function Parser(tokens){
         const ident = this.parseIdentifier(peek().loc)
         let type
 
-        if (match(TokenType.COLON)){
-            advance()
+        if (consume(TokenType.COLON)){
             type = this.parseIdentifier(peek().loc)
         }
         expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
@@ -135,8 +140,7 @@ function Parser(tokens){
     this.parseAssignment = function(loc){
         const expr = this.parseLeftPrecedenceExpr(peek().loc)
 
-        if (match(TokenType.EQ)){
-            advance()
+        if (consume(TokenType.EQ)){
             const value = this.__parseExpression(peek().loc)
 
             if (expr instanceof Identifier){
@@ -172,15 +176,13 @@ function Parser(tokens){
     this.parseFunctionCall = function(loc){
         const expr = this.parseFactor(peek().loc)
 
-        if (match(TokenType.LPAREN)){
-            advance()
+        if (consume(TokenType.LPAREN)){
             const args = []
 
             if (!match(TokenType.RPAREN)){
                 args.push(this.__parseExpression(peek().loc))
 
-                while (match(TokenType.COMMA)){
-                    advance()
+                while (consume(TokenType.COMMA)){
                     args.push(this.__parseExpression(peek().loc))
                 }
             }
