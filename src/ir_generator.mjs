@@ -1,6 +1,7 @@
 import * as ast from './ast.mjs'
 import * as ir from './ir.mjs'
 import { SymTab } from './symtab.mjs'
+import { TokenType } from './tokenizer.mjs'
 
 function IRGenerator(){
     let next_var = 1
@@ -25,8 +26,8 @@ function IRGenerator(){
         switch (node.constructor){
             case ast.Literal: return this.visitLiteral(node)
             case ast.Identifier: return var_table.getSymbol(node.name)
-            case ast.BinaryExpr:
-            case ast.LogicalExpr: return this.visitLeftRightExpr(node)
+            case ast.BinaryExpr: return this.visitBinaryExpr(node)
+            case ast.LogicalExpr: return this.visitLogicalExpr(node)
             case ast.IfExpr: return this.visitIfExpr(node)
             case ast.WhileExpr: return this.visitWhileExpr(node)
             case ast.Block: return this.visitBlock(node)
@@ -66,13 +67,65 @@ function IRGenerator(){
         }
         return _var
     }
-    this.visitLeftRightExpr = function(node){
+    this.visitBinaryExpr = function(node){
         const dest = newVar()
         emit(new ir.Call(node.op, [
             visit(node.left),
             visit(node.right)
         ], dest))
         return dest
+    }
+    this.visitLogicalExpr = function(node){
+        switch (node.op){
+            case TokenType.EQ_EQ:
+            case TokenType.NE:
+            case TokenType.LT:
+            case TokenType.LE:
+            case TokenType.GT:
+            case TokenType.GE:
+                return this.visitBinaryExpr(node)
+            case TokenType.AND: return this.visitLogicalAnd(node)
+            case TokenType.OR: return this.visitLogicalOr(node)
+            default: {
+                throw new Error(`Invalid logical operator: ${node.op}`)
+            }
+        }
+    }
+    this.visitLogicalAnd = function(node){
+        const _continue = newLabel()
+        const opSkip = newLabel()
+        const opEnd = newLabel()
+
+        const resLeft = visit(node.left)
+        emit(new ir.CondJump(resLeft, _continue, opSkip))
+
+        emit(_continue)
+        const res = visit(node.right)
+        emit(new ir.Jump(opEnd))
+
+        emit(opSkip)
+        emit(new ir.LoadBoolConst(false, res))
+        emit(opEnd)
+
+        return res
+    }
+    this.visitLogicalOr = function(node){
+        const _continue = newLabel()
+        const opSkip = newLabel()
+        const opEnd = newLabel()
+
+        const resLeft = visit(node.left)
+        emit(new ir.CondJump(resLeft, opSkip, _continue))
+
+        emit(_continue)
+        const res = visit(node.right)
+        emit(new ir.Jump(opEnd))
+
+        emit(opSkip)
+        emit(new ir.LoadBoolConst(true, res))
+        emit(opEnd)
+
+        return res
     }
     this.visitIfExpr = function(node){
         const _then = newLabel()
