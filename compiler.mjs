@@ -9,6 +9,7 @@ import { Tokenizer } from './src/tokenizer.mjs'
 import { Interpreter } from './src/interpreter.mjs'
 import { IRGenerator } from './src/ir_generator.mjs'
 import { TypeChecker } from './src/type_checker.mjs'
+import { AssemblyGenerator } from './src/assembly_generator.mjs'
 
 const tcSym = new SymTab()
 const ipSym = new SymTab()
@@ -29,9 +30,18 @@ const typecheck = (node) => {
     const typechecker = new TypeChecker(tcSym)
     return typechecker.typecheck(node)
 }
-const interpret = (node) => {
+const parseAndCheck = (source) => parse(source).filter(e => typecheck(e) && e)
+const interpret = (source, callback) => {
     const interpreter = new Interpreter(ipSym)
-    return interpreter.interpret(node)
+    parseAndCheck(source).forEach(e => callback(interpreter.interpret(e)))
+}
+const ir = (source) => {
+    const irGen = new IRGenerator(genSym)
+    return parseAndCheck(source).flatMap(e => irGen.generate(e))
+}
+const asm = (source) => {
+    const asmGen = new AssemblyGenerator(ir(source))
+    return asmGen.generate()
 }
 
 function main(){
@@ -69,8 +79,11 @@ function main(){
     }
     
     switch(command){
-        case 'ir': return generateIR(readSourceFile())
-        case 'interpret': return run(readSourceFile())
+        case 'asm': return exec(readSourceFile(), (source) => console.log(asm(source)))
+        case 'ir': return exec(readSourceFile(), (source) => console.log(ir(source).join(EOL)))
+        case 'interpret': return exec(readSourceFile(), (source) => {
+            interpret(source, (res) => console.log(res === null || res === undefined ? 'unit' : res))
+        })
         case 'repl': while(true) run(rl.question('>>> '))
         //case 'compile': return compile()
         default: {
@@ -80,29 +93,9 @@ function main(){
     }
 }
 
-function generateIR(source){
-    const irGen = new IRGenerator(genSym)
-
+function exec(source, callback){
     try {
-        const res = []
-
-        for (const expr of parse(source).filter(e => typecheck(e) && e)){
-            irGen.generate(expr).forEach(i => res.push(i))
-        }
-        console.log(res.join(EOL))
-        return 0
-    } catch(e) {
-        console.error(e.message)
-        return 1
-    }
-}
-
-function run(source){
-    try {
-        for (const expr of parse(source).filter(e => typecheck(e) && e)){
-            const res = interpret(expr)
-            console.log(res === null || res === undefined ? 'unit' : res)
-        }
+        callback(source)
         return 0
     } catch(e) {
         console.error(e.message)

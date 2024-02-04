@@ -4,6 +4,10 @@ export function IRVar(name){
 }
 
 export function Instruction(){
+    this.fields = () => {
+        return Object.keys(this)
+            .filter(k => this[k] !== undefined && typeof this[k] !== 'function')
+    }
     this.toString = () => {
         const format_value = (v) => {
             if (Array.isArray(v)){
@@ -11,16 +15,7 @@ export function Instruction(){
             }
             return v.toString()
         }
-
-        let props = []
-
-        for (const k in this){
-            if (this[k] === undefined || typeof this[k] === 'function'){
-                continue
-            }
-            props.push(format_value(this[k]))
-        }
-        return `${this.constructor.name}(${props.join(', ')})`
+        return `${this.constructor.name}(${this.fields().map(f => format_value(this[f])).join(', ')})`
     }
 }
 

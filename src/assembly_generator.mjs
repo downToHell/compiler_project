@@ -1,0 +1,135 @@
+import { EOL } from 'os'
+import * as ir from './ir.mjs'
+import * as intr from './intrinsics.mjs'
+
+function Locals(variables){
+    let stackUsed = 8
+    let varMap = {}
+
+    for (const _var of variables){
+        if (varMap[_var] === undefined){
+            varMap[_var] = `-${stackUsed}(${RBP})`
+            stackUsed += 8
+        }
+    }
+    this.getRef = (_var) => varMap[_var]
+    this.getStackUsed = () => stackUsed
+}
+
+const getIRVariables = (instructions) => {
+    const res = {}
+
+    for (const ins of instructions){
+        for (const field of ins.fields()){
+            if (ir.IRVar.prototype.isPrototypeOf(ins[field])){
+                res[ins[field].name] = ins[field]
+            } else if (Array.isArray(ins[field])){
+                for (const v of ins[field]){
+                    if (ir.IRVar.prototype.isPrototypeOf(ins[field])){
+                        res[ins[field].name] = ins[field]
+                    }
+                }
+            }
+        }
+    }
+    return Object.values(res)
+}
+
+const { RAX, RDI, RBP, RSP } = intr.Register
+const {
+    MOVQ, POPQ, PUSHQ,
+    RET, SUBQ, CALL
+} = intr.Mnemonic
+
+function AssemblyGenerator(instructions){
+    const asm = []
+
+    const locals = new Locals(getIRVariables(instructions))
+    const emit = (l) => asm.push(l || '')
+    let level = 0
+
+    const indent = () => level++
+    const dedent = () => level--
+    const makeIndentation = () => '   '.repeat(Math.max(level, 0))
+
+    const emitInsn = function(mnemonic, ...args){
+        if (args.length === 0){
+            emit(makeIndentation() + mnemonic)
+            return
+        }
+
+        const format_value = (value) => {
+            if (!isNaN(parseInt(value)) && isFinite(value)){
+                return `\$${value}`
+            }
+            return value
+        }
+        emit(`${makeIndentation()}${mnemonic} ${args.map(f => format_value(f)).join(', ')}`)
+    }
+    const emitLabel = function(name, omitPrefix){
+        if (level > 0) {
+            dedent()
+            emit()
+        }
+        emit(`${makeIndentation()}${omitPrefix === undefined || !omitPrefix ? '.L' : ''}${name}:`)
+        indent()
+    }
+    const emitComment = (text) => emit(`${makeIndentation()}# ${text}`)
+
+    this.generate = function(){
+        emit('.global main')
+        emit('.type main, @function')
+        emit('.extern print_int')
+        emit('.extern print_bool')
+        emit('.extern read_int')
+
+        emit('.section .text')
+        emitLabel('main', true)
+        emitInsn(PUSHQ, RBP)
+        emitInsn(MOVQ, RSP, RBP)
+        emitInsn(SUBQ, locals.getStackUsed(), RSP)
+
+        for (const ins of instructions){
+            emitComment(ins)
+            
+            switch(ins.constructor){
+                case ir.Label: emitLabel(ins.name); break
+                case ir.LoadIntConst: emitInsn(MOVQ, ins.value, locals.getRef(ins.dest)); break
+                case ir.Copy: {
+                    emitInsn(MOVQ, locals.getRef(ins.source), RAX)
+                    emitInsn(MOVQ, RAX, locals.getRef(ins.dest))
+                    break
+                }
+                case ir.Call: {
+                    if (intr.allIntrinsics[ins.fun]){
+                        const intrinsic = intr.allIntrinsics[ins.fun]
+                        intrinsic({
+                            refs: ins.args.map(a => locals.getRef(a)),
+                            emit: emitInsn
+                        })
+                        emitInsn(MOVQ, RAX, locals.getRef(ins.dest))
+                        break
+                    } else {
+                        if (ins.fun !== 'print_int') throw new Error(`Unknown function: ${ins.fun}`)
+                        emitInsn(MOVQ, locals.getRef(ins.args[0]), RDI)
+                        emitInsn(CALL, ins.fun)
+                        break
+                    }
+                }
+                default: {
+                    throw new Error(`Unknown instruction: ${ins}`)
+                }
+            }
+        }
+        emitInsn(MOVQ, 0, RAX)
+        emitInsn(MOVQ, RBP, RSP)
+        emitInsn(POPQ, RBP)
+        emitInsn(RET)
+        emit()
+
+        return asm.join(EOL)
+    }
+    
+}
+
+export { AssemblyGenerator }
