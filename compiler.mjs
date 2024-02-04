@@ -1,14 +1,15 @@
 #!/usr/bin/env node
+import fs from 'fs'
 import path from 'path'
 import * as rl from 'readline-sync'
 import { EOL } from 'os'
-import { readFileSync } from 'fs'
 import { SymTab } from './src/symtab.mjs'
 import { Parser } from './src/parser.mjs'
 import { Tokenizer } from './src/tokenizer.mjs'
 import { Interpreter } from './src/interpreter.mjs'
 import { IRGenerator } from './src/ir_generator.mjs'
 import { TypeChecker } from './src/type_checker.mjs'
+import { execFileSync } from 'child_process'
 import { AssemblyGenerator } from './src/assembly_generator.mjs'
 
 const tcSym = new SymTab()
@@ -73,7 +74,7 @@ function main(){
         if (inFile === undefined){
             return rl.question('> ')
         } else if (isPath(inFile)){
-            return readFileSync(inFile)
+            return fs.readFileSync(inFile)
         }
         return inFile
     }
@@ -85,7 +86,12 @@ function main(){
             interpret(source, (res) => console.log(res === null || res === undefined ? 'unit' : res))
         })
         case 'repl': while(true) run(rl.question('>>> '))
-        //case 'compile': return compile()
+        case 'compile': return exec(readSourceFile(), (source) => {
+            fs.writeFileSync('asm.s', asm(source))
+            const out = execFileSync('rasm', ['-q', '-o', 'asm', 'asm.s'])
+            process.stdout.write(out.toString())
+            fs.rmSync('asm.s')
+        })
         default: {
             console.error(`Command '${command}' is not supported!`)
             return 1
