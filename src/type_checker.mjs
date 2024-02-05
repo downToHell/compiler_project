@@ -41,6 +41,7 @@ function TypeChecker(_env){
             case ast.Assignment: return this.typeOfAssignment(node)
             case ast.Declaration: return this.typeOfDeclaration(node)
             case ast.TypeExpr: return this.typeOfTypeExpr(node)
+            case ast.Grouping: return this.typecheck(node.expr)
             default: throw new Error(`Unknown ast node: ${node.constructor.name}`)
         }
     }
