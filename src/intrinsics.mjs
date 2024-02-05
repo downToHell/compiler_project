@@ -17,6 +17,8 @@ const Mnemonic = Object.freeze({
     CQTO: 'cqto',
     CMPQ: 'cmpq',
     IDIVQ: 'idivq',
+    JMP: 'jmp',
+    JNE: 'jne',
     NEGQ: 'negq',
     XORQ: 'xorq',
     POPQ: 'popq',

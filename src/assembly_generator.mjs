@@ -37,8 +37,9 @@ const getIRVariables = (instructions) => {
 
 const { RAX, RDI, RBP, RSP } = intr.Register
 const {
-    MOVQ, POPQ, PUSHQ,
-    RET, SUBQ, CALL
+    MOVQ, POPQ, PUSHQ, RET,
+    SUBQ, CALL, JMP, JNE,
+    CMPQ
 } = intr.Mnemonic
 
 function AssemblyGenerator(instructions){
@@ -51,6 +52,9 @@ function AssemblyGenerator(instructions){
     const indent = () => level++
     const dedent = () => level--
     const makeIndentation = () => '   '.repeat(Math.max(level, 0))
+    const makeJumpTarget = (name, omitPrefix) => {
+        return `${omitPrefix === undefined || !omitPrefix ? '.L' : ''}${name}`
+    }
 
     const emitInsn = function(mnemonic, ...args){
         if (args.length === 0){
@@ -71,7 +75,7 @@ function AssemblyGenerator(instructions){
             dedent()
             emit()
         }
-        emit(`${makeIndentation()}${omitPrefix === undefined || !omitPrefix ? '.L' : ''}${name}:`)
+        emit(`${makeIndentation()}${makeJumpTarget(name, omitPrefix)}:`)
         indent()
     }
     const emitComment = (text) => emit(`${makeIndentation()}# ${text}`)
@@ -88,16 +92,25 @@ function AssemblyGenerator(instructions){
         emitInsn(PUSHQ, RBP)
         emitInsn(MOVQ, RSP, RBP)
         emitInsn(SUBQ, locals.getStackUsed(), RSP)
+        emitLabel('start')
 
         for (const ins of instructions){
-            emitComment(ins)
+            if (ins.constructor !== ir.Label) emitComment(ins)
             
             switch(ins.constructor){
                 case ir.Label: emitLabel(ins.name); break
                 case ir.LoadIntConst: emitInsn(MOVQ, ins.value, locals.getRef(ins.dest)); break
+                case ir.LoadBoolConst: emitInsn(MOVQ, ins.value ? 1 : 0, locals.getRef(ins.dest)); break
                 case ir.Copy: {
                     emitInsn(MOVQ, locals.getRef(ins.source), RAX)
                     emitInsn(MOVQ, RAX, locals.getRef(ins.dest))
+                    break
+                }
+                case ir.Jump: emitInsn(JMP, makeJumpTarget(ins.label.name)); break
+                case ir.CondJump: {
+                    emitInsn(CMPQ, 0, locals.getRef(ins.cond))
+                    emitInsn(JNE, makeJumpTarget(ins.then.name))
+                    emitInsn(JMP, makeJumpTarget(ins.elsz.name))
                     break
                 }
                 case ir.Call: {
@@ -108,13 +121,12 @@ function AssemblyGenerator(instructions){
                             emit: emitInsn
                         })
                         emitInsn(MOVQ, RAX, locals.getRef(ins.dest))
-                        break
                     } else {
                         if (ins.fun !== 'print_int') throw new Error(`Unknown function: ${ins.fun}`)
                         emitInsn(MOVQ, locals.getRef(ins.args[0]), RDI)
                         emitInsn(CALL, ins.fun)
-                        break
                     }
+                    break
                 }
                 default: {
                     throw new Error(`Unknown instruction: ${ins}`)
