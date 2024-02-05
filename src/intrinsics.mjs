@@ -109,13 +109,13 @@ const remainder = (options) => {
         a.emit(MOVQ, RDX, a.res)
     }
 }
-const _intComparison = (options) => {
+const _intComparison = (options, setcc) => {
     const a = _unwrap(options)
 
     a.emit(XORQ, RAX, RAX)
     a.emit(MOVQ, a.refs[0], RDX)
     a.emit(CMPQ, a.refs[1], RDX)
-    a.emit(options.setcc, AL)
+    a.emit(setcc, AL)
 
     if (a.res !== RAX){
         a.emit(MOVQ, RAX, a.res)
