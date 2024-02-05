@@ -9,7 +9,7 @@ import { Tokenizer } from './src/tokenizer.mjs'
 import { Interpreter } from './src/interpreter.mjs'
 import { IRGenerator } from './src/ir_generator.mjs'
 import { TypeChecker } from './src/type_checker.mjs'
-import { execFileSync } from 'child_process'
+import { Assembler } from './assembler.mjs'
 import { AssemblyGenerator } from './src/assembly_generator.mjs'
 
 const tcSym = new SymTab()
@@ -43,6 +43,10 @@ const ir = (source) => {
 const asm = (source) => {
     const asmGen = new AssemblyGenerator(ir(source))
     return asmGen.generate()
+}
+const assemble = (source) => {
+    const rasm = new Assembler()
+    return rasm.assemble(asm(source), { out: 'asm', tmpname: 'asm' })
 }
 
 function main(){
@@ -86,12 +90,7 @@ function main(){
             interpret(source, (res) => console.log(res === null || res === undefined ? 'unit' : res))
         })
         case 'repl': while(true) run(rl.question('>>> '))
-        case 'compile': return exec(readSourceFile(), (source) => {
-            fs.writeFileSync('asm.s', asm(source))
-            const out = execFileSync('rasm', ['-q', '-o', 'asm', 'asm.s'])
-            process.stdout.write(out.toString())
-            fs.rmSync('asm.s')
-        })
+        case 'compile': return exec(readSourceFile(), (source) => process.stdout.write(assemble(source)))
         default: {
             console.error(`Command '${command}' is not supported!`)
             return 1
