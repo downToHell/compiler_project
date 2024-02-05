@@ -8,6 +8,7 @@ import { Parser } from './src/parser.mjs'
 import { Tokenizer } from './src/tokenizer.mjs'
 import { Interpreter } from './src/interpreter.mjs'
 import { IRGenerator } from './src/ir_generator.mjs'
+import { ClearFn, ExitFn } from './src/types.mjs'
 import { TypeChecker } from './src/type_checker.mjs'
 import { Assembler } from './assembler.mjs'
 import { AssemblyGenerator } from './src/assembly_generator.mjs'
@@ -15,6 +16,9 @@ import { AssemblyGenerator } from './src/assembly_generator.mjs'
 const tcSym = new SymTab()
 const ipSym = new SymTab()
 const genSym = new SymTab()
+
+tcSym.addSymbol('clear', ClearFn)
+tcSym.addSymbol('exit', ExitFn)
 
 ipSym.addSymbol('print_int', (i) => console.log(i))
 ipSym.addSymbol('print_bool', (b) => console.log(b))
@@ -36,6 +40,7 @@ const interpret = (source, callback) => {
     const interpreter = new Interpreter(ipSym)
     parseAndCheck(source).forEach(e => callback(interpreter.interpret(e)))
 }
+const printResult = (res) => console.log(res === null || res === undefined ? 'unit' : res)
 const ir = (source) => {
     const irGen = new IRGenerator(genSym)
     return parseAndCheck(source).flatMap(e => irGen.generate(e))
@@ -86,10 +91,8 @@ function main(){
     switch(command){
         case 'asm': return exec(readSourceFile(), (source) => console.log(asm(source)))
         case 'ir': return exec(readSourceFile(), (source) => console.log(ir(source).join(EOL)))
-        case 'interpret': return exec(readSourceFile(), (source) => {
-            interpret(source, (res) => console.log(res === null || res === undefined ? 'unit' : res))
-        })
-        case 'repl': while(true) run(rl.question('>>> '))
+        case 'interpret': return exec(readSourceFile(), (source) => interpret(source, printResult))
+        case 'repl': while(true) interpret(rl.question('>>> '), printResult)
         case 'compile': return exec(readSourceFile(), (source) => process.stdout.write(assemble(source)))
         default: {
             console.error(`Command '${command}' is not supported!`)
