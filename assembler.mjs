@@ -34,8 +34,9 @@ export function Assembler(){
                 execFileSync(as, ['-g', '-o', src_obj, src])
                 execFileSync(as, ['-g', '-o', stdlib_obj, stdlib])
                 execFileSync('ld', ['-o', out, '-static', src_obj, stdlib_obj])
-                stdout = execFileSync(out)
+                stdout = execFileSync(`./${out}`, { shell: true })
 
+                fs.rmSync(out)
                 fs.rmSync(src_obj)
                 fs.rmSync(stdlib_obj)
             }
