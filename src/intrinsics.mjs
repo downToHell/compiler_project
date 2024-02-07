@@ -2,6 +2,7 @@ const Register = Object.freeze({
     AL: '%al',
     RAX: '%rax',
     RDI: '%rdi',
+    RSI: '%rsi',
     RDX: '%rdx',
     RBP: '%rbp',
     RSP: '%rsp'
@@ -31,12 +32,12 @@ const Mnemonic = Object.freeze({
     RET: 'ret'
 })
 
-const { AL, RAX, RDX } = Register
+const { AL, RAX, RDX, RDI, RSI } = Register
 const {
     ADDQ, CMPQ, CQTO, IDIVQ,
     IMULQ, MOVQ, NEGQ, SETE,
     SETG, SETGE, SETL, SETLE,
-    SETNE, SUBQ, XORQ
+    SETNE, SUBQ, XORQ, CALL
 } = Mnemonic
 
 const _unwrap = (options) => {
@@ -87,6 +88,17 @@ const multiply = (options) => {
     }
     a.emit(IMULQ, a.refs[1], a.res)
 }
+const pow = (options) => {
+    const a = _unwrap(options)
+
+    a.emit(MOVQ, a.refs[0], RDI);
+    a.emit(MOVQ, a.refs[1], RSI);
+    a.emit(CALL, 'pow');
+
+    if (a.res !== RAX){
+        a.emit(MOVQ, RAX, a.res)
+    }
+}
 const divide = (options) => {
     const a = _unwrap(options)
 
@@ -134,6 +146,7 @@ const allIntrinsics = {
     '+': plus,
     '-': minus,
     '*': multiply,
+    '**': pow,
     '/': divide,
     '%': remainder,
     '==': eq,

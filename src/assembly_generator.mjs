@@ -86,6 +86,7 @@ function AssemblyGenerator(instructions){
         emit('.extern print_int')
         emit('.extern print_bool')
         emit('.extern read_int')
+        emit('.extern pow')
 
         emit('.section .text')
         emitLabel('main', true)

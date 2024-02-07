@@ -52,6 +52,7 @@ const STDLIB_ASM_CODE = `
 .global print_int
 .global print_bool
 .global read_int
+.global pow
 .extern main
 .section .text
 
@@ -63,6 +64,35 @@ call main
 movq $60, %rax
 xorq %rdi, %rdi
 syscall
+
+# ***** Function 'pow' *****
+# Multiplies the input number times x by itself.
+#
+# Registers:
+# - rdi = the number that should be multiplied
+# - rsi = the number of times that rdi should be multiplied by itself
+pow:
+movq %rdi, %r10           # copy base to r10
+movq %rsi, %r11           # copy exponent to r11
+cmpq $0, %r11             # check if exponent is negative
+jl .Lpow_neg_exp_err
+movq $1, %rax             # initialize result register (%rax) with 1
+
+.Lpow_loop:
+imulq %r10, %rax
+decq %r11                 # decrement the exponent
+cmpq $0, %r11             # check if exponent is zero
+jne .Lpow_loop            # if it is not, it means we still have to multiply
+ret
+
+.Lpow_neg_exp_err:
+movq $1, %rax
+movq $2, %rdi
+movq $pow_neg_error_str, %rsi
+movq $pow_neg_error_str_len, %rdx
+syscall
+jmp .Lexit
+
 
 # ***** Function 'print_int' *****
 # Prints a 64-bit signed integer followed by a newline.
@@ -292,6 +322,7 @@ movq $read_int_error_str, %rsi
 movq $read_int_error_str_len, %rdx
 syscall
 
+.Lexit:
 # Exit the program
 movq $60, %rax      # Syscall number for exit = 60.
 movq $1, %rdi       # Set exit code 1.
@@ -300,4 +331,7 @@ syscall
 read_int_error_str:
 .ascii "Error: read_int() failed to read input\\n"
 read_int_error_str_len = . - read_int_error_str
+pow_neg_error_str:
+.ascii "Error: pow() does not support negative exponents\\n"
+pow_neg_error_str_len = . - pow_neg_error_str
 `
