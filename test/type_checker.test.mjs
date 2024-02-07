@@ -20,6 +20,11 @@ describe('Typechecker tests', function(){
         assert.throws(() => typecheck('1 + true'))
     })
 
+    it('rejects invalid unary expressions', function(){
+        assert.throws(() => typecheck('not 5'))
+        assert.throws(() => typecheck('-true'))
+    })
+
     it('typechecks logical expressions', function(){
         assert.ok(typecheck('3 != 3 or 3 < 5') === Bool)
     })

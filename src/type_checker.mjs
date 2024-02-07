@@ -1,11 +1,13 @@
 import * as ast from './ast.mjs'
 import { SymTab } from './symtab.mjs'
 import { 
+    ArithmeticNegation,
     ArithmeticOp,
     Bool,
     ComparisonOp,
     EqualityOp,
     Int,
+    LogicalNegation,
     LogicalOp,
     PrintBoolFn,
     PrintIntFn,
@@ -27,6 +29,8 @@ function TypeChecker(_env){
     env.addIfAbsent(COMPARISON_OPS, ComparisonOp)
     env.addIfAbsent('print_int', PrintIntFn)
     env.addIfAbsent('print_bool', PrintBoolFn)
+    env.addIfAbsent(TokenType.UNARY_MINUS, ArithmeticNegation)
+    env.addIfAbsent(TokenType.NOT, LogicalNegation)
 
     this.typecheck = function(node){
         switch(node.constructor){
@@ -34,6 +38,7 @@ function TypeChecker(_env){
             case ast.Identifier: return env.getSymbol(node.name)
             case ast.BinaryExpr: return this.typeOfBinaryExpr(node)
             case ast.LogicalExpr: return this.typeOfBinaryExpr(node)
+            case ast.UnaryExpr: return this.typeOfUnaryExpr(node)
             case ast.Call: return this.typeOfCall(node)
             case ast.Block: return this.typeOfBlock(node)
             case ast.IfExpr: return this.typeOfIfExpr(node)
@@ -57,6 +62,9 @@ function TypeChecker(_env){
     }
     this.typeOfBinaryExpr = function(node){
         return this.typeOfCall({ target: { name: node.op }, args: [node.left, node.right], loc: node.loc })
+    }
+    this.typeOfUnaryExpr = function(node){
+        return this.typeOfCall({ target: { name: node.op }, args: [node.right], loc: node.loc })
     }
     this.typeOfCall = function(node){
         const fun = env.getSymbol(node.target.name)
