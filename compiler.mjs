@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'fs'
 import path from 'path'
+import { EOL } from 'os'
 import * as rl from 'readline-sync'
 import { SymTab } from './src/symtab.mjs'
 import { Parser } from './src/parser.mjs'
@@ -54,7 +55,7 @@ const assemble = (source) => {
 
 const commandPool = Object.freeze({
     'asm': (code) => exec(code, (source) => console.log(asm(source))),
-    'ir': (code) => exec(code, (source) => console.log(ir(source))),
+    'ir': (code) => exec(code, (source) => console.log(ir(source).join(EOL))),
     'interpret': (code) => exec(code, (source) => interpret(source, printResult)),
     'repl': () => exec(null, () => { while(true) interpret(rl.question('>>> '), printResult) }),
     'compile': (code) => exec(code, (source) => process.stdout.write(assemble(source)))
