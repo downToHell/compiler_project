@@ -2,7 +2,6 @@
 import fs from 'fs'
 import path from 'path'
 import * as rl from 'readline-sync'
-import { EOL } from 'os'
 import { SymTab } from './src/symtab.mjs'
 import { Parser } from './src/parser.mjs'
 import { Tokenizer } from './src/tokenizer.mjs'
@@ -25,7 +24,6 @@ ipSym.addSymbol('print_bool', (b) => console.log(b))
 ipSym.addSymbol('clear', () => console.clear())
 ipSym.addSymbol('exit', () => process.exit())
 
-const help = () => console.error(`usage: ${path.basename(process.argv[1])} <command> [file/input]`)
 const parse = (source) => {
     const scn = new Tokenizer(source)
     const parser = new Parser(scn.tokens())
@@ -52,6 +50,28 @@ const asm = (source) => {
 const assemble = (source) => {
     const rasm = new Assembler()
     return rasm.assemble(asm(source), { out: 'asm', tmpname: 'asm' })
+}
+
+const commandPool = Object.freeze({
+    'asm': (code) => exec(code, (source) => console.log(asm(source))),
+    'ir': (code) => exec(code, (source) => console.log(ir(source))),
+    'interpret': (code) => exec(code, (source) => interpret(source, printResult)),
+    'repl': () => exec(null, () => { while(true) interpret(rl.question('>>> '), printResult) }),
+    'compile': (code) => exec(code, (source) => process.stdout.write(assemble(source)))
+})
+
+const help = () => {
+    const getenv = (env) => `${env}=${process.env[env] ? `"${process.env[env]}"` : '<not set>'}`
+    const msg = `usage: ${path.basename(process.argv[1])} <command> [file/input]
+
+AVAILABLE COMMANDS:
+    ${Object.keys(commandPool).join(', ')}
+
+ENVIRONMENT VARIABLES:
+    ${getenv('RASM_HOST_PATH')}
+    ${getenv('RASM_HOST_KEY')}
+    ${getenv('CSCP_ASM')}`
+    console.error(msg)
 }
 
 function main(){
@@ -87,23 +107,19 @@ function main(){
         }
         return inFile
     }
-    
-    switch(command){
-        case 'asm': return exec(readSourceFile(), (source) => console.log(asm(source)))
-        case 'ir': return exec(readSourceFile(), (source) => console.log(ir(source).join(EOL)))
-        case 'interpret': return exec(readSourceFile(), (source) => interpret(source, printResult))
-        case 'repl': while(true) interpret(rl.question('>>> '), printResult)
-        case 'compile': return exec(readSourceFile(), (source) => process.stdout.write(assemble(source)))
-        default: {
-            console.error(`Command '${command}' is not supported!`)
-            return 1
-        }
+
+    if (!commandPool[command]){
+        console.error(`Command '${command}' is not supported!`)
+        return 1
+    } else if (commandPool[command].length){
+        return commandPool[command](readSourceFile())
     }
+    return commandPool[command]()
 }
 
 function exec(source, callback){
     try {
-        callback(source)
+        callback.length ? callback(source) : callback()
         return 0
     } catch(e) {
         console.error(e.message)
