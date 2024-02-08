@@ -4,8 +4,11 @@ const Register = Object.freeze({
     RDI: '%rdi',
     RSI: '%rsi',
     RDX: '%rdx',
+    RCX: '%rcx',
     RBP: '%rbp',
-    RSP: '%rsp'
+    RSP: '%rsp',
+    R8: '%r8',
+    R9: '%r9'
 })
 
 const Mnemonic = Object.freeze({
@@ -32,13 +35,15 @@ const Mnemonic = Object.freeze({
     RET: 'ret'
 })
 
-const { AL, RAX, RDX, RDI, RSI } = Register
+const { AL, RAX, RDX, RCX, RDI, RSI, R8, R9 } = Register
 const {
     ADDQ, CMPQ, CQTO, IDIVQ,
     IMULQ, MOVQ, NEGQ, SETE,
     SETG, SETGE, SETL, SETLE,
     SETNE, SUBQ, XORQ, CALL
 } = Mnemonic
+
+const argMap = Object.freeze([RDI, RSI, RDX, RCX, R8, R9])
 
 const _unwrap = (options) => {
     options = options || {}
@@ -157,4 +162,4 @@ const allIntrinsics = {
     '>=': ge
 }
 
-export { Register, Mnemonic, allIntrinsics }
+export { Register, Mnemonic, argMap, allIntrinsics }

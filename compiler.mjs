@@ -22,6 +22,7 @@ tcSym.addSymbol('exit', ExitFn)
 
 ipSym.addSymbol('print_int', (i) => console.log(i))
 ipSym.addSymbol('print_bool', (b) => console.log(b))
+ipSym.addSymbol('read_int', () => rl.questionInt())
 ipSym.addSymbol('clear', () => console.clear())
 ipSym.addSymbol('exit', () => process.exit())
 

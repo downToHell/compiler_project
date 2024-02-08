@@ -1,6 +1,7 @@
 import { EOL } from 'os'
 import * as ir from './ir.mjs'
 import * as intr from './intrinsics.mjs'
+import { isNumber } from './tokenizer.mjs'
 
 function Locals(variables){
     let stackUsed = 8
@@ -63,7 +64,7 @@ function AssemblyGenerator(instructions){
         }
 
         const format_value = (value) => {
-            if (!isNaN(parseInt(value)) && isFinite(value)){
+            if (isNumber(value)){
                 return `\$${value}`
             }
             return value
@@ -121,12 +122,14 @@ function AssemblyGenerator(instructions){
                             refs: ins.args.map(a => locals.getRef(a)),
                             emit: emitInsn
                         })
-                        emitInsn(MOVQ, RAX, locals.getRef(ins.dest))
                     } else {
-                        if (ins.fun !== 'print_int') throw new Error(`Unknown function: ${ins.fun}`)
-                        emitInsn(MOVQ, locals.getRef(ins.args[0]), RDI)
+                        if (ins.args.length > 6){
+                            throw new Error(`Invalid arity for function '${ins.fun}': args > 6`)
+                        }
+                        ins.args.forEach((arg, i) => emitInsn(MOVQ, locals.getRef(arg), intr.argMap[i]))
                         emitInsn(CALL, ins.fun)
                     }
+                    emitInsn(MOVQ, RAX, locals.getRef(ins.dest))
                     break
                 }
                 default: {

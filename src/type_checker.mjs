@@ -11,6 +11,7 @@ import {
     LogicalOp,
     PrintBoolFn,
     PrintIntFn,
+    ReadIntFn,
     Unit
 } from './types.mjs'
 import { TokenType } from './tokenizer.mjs'
@@ -29,6 +30,7 @@ function TypeChecker(_env){
     env.addIfAbsent(COMPARISON_OPS, ComparisonOp)
     env.addIfAbsent('print_int', PrintIntFn)
     env.addIfAbsent('print_bool', PrintBoolFn)
+    env.addIfAbsent('read_int', ReadIntFn)
     env.addIfAbsent(TokenType.UNARY_MINUS, ArithmeticNegation)
     env.addIfAbsent(TokenType.NOT, LogicalNegation)
 
