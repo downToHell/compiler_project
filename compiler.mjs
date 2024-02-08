@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'fs'
-import path from 'path'
 import { EOL } from 'os'
+import { basename } from 'path'
 import * as rl from 'readline-sync'
 import { SymTab } from './src/symtab.mjs'
 import { Parser } from './src/parser.mjs'
@@ -64,7 +64,7 @@ const commandPool = Object.freeze({
 
 const help = () => {
     const getenv = (env) => `${env}=${process.env[env] ? `"${process.env[env]}"` : '<not set>'}`
-    const msg = `usage: ${path.basename(process.argv[1])} <command> [file/input]
+    const msg = `usage: ${basename(process.argv[1])} <command> [file/input]
 
 AVAILABLE COMMANDS:
     ${Object.keys(commandPool).join(', ')}
@@ -92,7 +92,7 @@ function main(){
     }
     const isPath = (path) => {
         try {
-            path.parse(path)
+            fs.statSync(path)
             return true
         } catch {
             return false
