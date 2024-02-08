@@ -3,7 +3,7 @@ import path from 'path'
 import { execFileSync } from 'child_process'
 
 export function Assembler(){
-    let as = 'as'
+    let as = process.env.CSCP_ASM || 'as'
     const filename = (file) => path.parse(file).name
 
     this.assemble = function(asm, options){
@@ -17,10 +17,6 @@ export function Assembler(){
 
         fs.writeFileSync(stdlib, STDLIB_ASM_CODE)
         fs.writeFileSync(src, asm)
-
-        if (process.env.CSCP_ASM){
-            as = process.env.CSCP_ASM
-        }
 
         try {
             let stdout

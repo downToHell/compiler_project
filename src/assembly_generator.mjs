@@ -36,7 +36,7 @@ const getIRVariables = (instructions) => {
     return Object.values(res)
 }
 
-const { RAX, RDI, RBP, RSP } = intr.Register
+const { RAX, RBP, RSP } = intr.Register
 const {
     MOVQ, POPQ, PUSHQ, RET,
     SUBQ, CALL, JMP, JNE,
