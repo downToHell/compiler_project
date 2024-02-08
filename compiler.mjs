@@ -105,7 +105,7 @@ function main(){
         if (inFile === undefined){
             return rl.question('> ')
         } else if (isPath(inFile)){
-            return fs.readFileSync(inFile)
+            return fs.readFileSync(inFile).toString()
         }
         return inFile
     }
