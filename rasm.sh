@@ -17,7 +17,7 @@ ENVIRONMENT VARIABLES:
 function handle_process_died {
     if [ $? -ne 0 ]; then
         echo "Child process exited with status code: $?"
-        exit 1
+        exit $?
     fi
 }
 

@@ -137,7 +137,7 @@ function IRGenerator(_env){
         const _end = newLabel()
 
         const var_cond = visit(node.cond)
-        emit(new ir.CondJump(var_cond, _then, _else))
+        emit(new ir.CondJump(var_cond, _then, _else || _end))
 
         emit(_then)
         const then_res = visit(node.body)
@@ -176,7 +176,8 @@ function IRGenerator(_env){
         return last
     }
     this.visitDeclaration = function(node){
-        const _var = visit(node.initializer)
+        const _var = newVar()
+        emit(new ir.Copy(visit(node.initializer), _var))
         env.addSymbol(node.ident.name, _var)
         return _var
     }

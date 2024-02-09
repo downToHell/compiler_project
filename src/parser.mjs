@@ -77,7 +77,7 @@ function Parser(tokens){
 
         do {
             exprs.push(this.parseExpression(peek().loc))
-        } while (consume(TokenType.SEMICOLON))
+        } while (consume(TokenType.SEMICOLON) && peek().type != TokenType.END)
         expect(TokenType.END, `EOF expected, got ${peek().type}`)
         return exprs
     }
