@@ -82,10 +82,6 @@ function Parser(tokens){
         return exprs
     }
     this.parseExpression = function(loc){
-        if (match(TokenType.IF)) return this.parseIfExpression(loc)
-        if (match(TokenType.VAR)) return this.parseVarDeclaration(loc)
-        if (match(TokenType.WHILE)) return this.parseWhileExpression(loc)
-        if (match(TokenType.LBRACE)) return this.parseBlockExpression(loc)
         return this.parseAssignment(loc)
     }
     this.parseIfExpression = function(loc){
@@ -196,17 +192,15 @@ function Parser(tokens){
         return expr
     }
     this.parseFactor = function(loc){
-        if (match(TokenType.LPAREN)){
-            return this.parseGroup(loc)
-        } else if (match(TokenType.INT_LITERAL)){
-            return this.parseIntLiteral(loc)
-        } else if (match(TokenType.BOOL_LITERAL)){
-            return this.parseBoolLiteral(loc)
-        } else if (match(TokenType.UNIT_LITERAL)){
-            return this.parseUnitLiteral(loc)
-        } else if (match(TokenType.IDENTIFIER)){
-            return this.parseIdentifier(loc)
-        }
+        if (match(TokenType.IF)) return this.parseIfExpression(loc)
+        if (match(TokenType.VAR)) return this.parseVarDeclaration(loc)
+        if (match(TokenType.WHILE)) return this.parseWhileExpression(loc)
+        if (match(TokenType.LBRACE)) return this.parseBlockExpression(loc)
+        if (match(TokenType.LPAREN)) return this.parseGroup(loc)
+        if (match(TokenType.INT_LITERAL)) return this.parseIntLiteral(loc)
+        if (match(TokenType.BOOL_LITERAL)) return this.parseBoolLiteral(loc)
+        if (match(TokenType.UNIT_LITERAL)) return this.parseUnitLiteral(loc)
+        if (match(TokenType.IDENTIFIER)) return this.parseIdentifier(loc)
         throw new Error(`${loc}: Expected one of ${[TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
     }
     this.parseGroup = function(loc){

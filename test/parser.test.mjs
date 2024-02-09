@@ -233,6 +233,11 @@ describe('Parser tests', function(){
         assert.strictEqual(expr.elsz, undefined)
     })
 
+    it('treats everything as an expression', function(){
+        let parser = makeParser('1 + if true then 2 else 3')
+        assert.doesNotThrow(() => parser.parse().first())
+    })
+
     it('rejects assignment in if', function(){
         let parser = makeParser('if a = b then x + y')
         assert.throws(() => parser.parse())
