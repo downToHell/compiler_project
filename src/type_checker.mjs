@@ -66,7 +66,7 @@ function TypeChecker(_env){
         return this.typeOfCall({ target: { name: node.op }, args: [node.left, node.right], loc: node.loc })
     }
     this.typeOfUnaryExpr = function(node){
-        return this.typeOfCall({ target: { name: node.op }, args: [node.right], loc: node.loc })
+        return this.typeOfCall({ target: { name: node.op === TokenType.MINUS ? TokenType.UNARY_MINUS : node.op }, args: [node.right], loc: node.loc })
     }
     this.typeOfCall = function(node){
         const fun = env.getSymbol(node.target.name)
