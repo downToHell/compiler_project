@@ -3,64 +3,18 @@ import fs from 'fs'
 import { EOL } from 'os'
 import { basename } from 'path'
 import * as rl from 'readline-sync'
-import { SymTab } from './src/symtab.mjs'
-import { Parser } from './src/parser.mjs'
-import { Tokenizer } from './src/tokenizer.mjs'
-import { Interpreter } from './src/interpreter.mjs'
-import { IRGenerator } from './src/ir_generator.mjs'
-import { ClearFn, ExitFn } from './src/types.mjs'
-import { TypeChecker } from './src/type_checker.mjs'
-import { Assembler } from './assembler.mjs'
-import { AssemblyGenerator } from './src/assembly_generator.mjs'
+import * as cs from './compiler_suite.mjs'
 
-const tcSym = new SymTab()
-const ipSym = new SymTab()
-const genSym = new SymTab()
-
-tcSym.addSymbol('clear', ClearFn)
-tcSym.addSymbol('exit', ExitFn)
-
-ipSym.addSymbol('print_int', (i) => console.log(i))
-ipSym.addSymbol('print_bool', (b) => console.log(b))
-ipSym.addSymbol('read_int', () => rl.questionInt())
-ipSym.addSymbol('clear', () => console.clear())
-ipSym.addSymbol('exit', () => process.exit())
-
-const parse = (source) => {
-    const scn = new Tokenizer(source)
-    const parser = new Parser(scn.tokens())
-    return parser.parse()
-}
-const typecheck = (node) => {
-    const typechecker = new TypeChecker(tcSym)
-    return typechecker.typecheck(node)
-}
-const parseAndCheck = (source) => parse(source).filter(e => typecheck(e) && e)
-const interpret = (source, callback) => {
-    const interpreter = new Interpreter(ipSym)
-    parseAndCheck(source).forEach(e => callback(interpreter.interpret(e)))
-}
 const printResult = (res) => console.log(res === null || res === undefined ? 'unit' : res)
-const ir = (source) => {
-    const irGen = new IRGenerator(genSym)
-    return parseAndCheck(source).flatMap(e => irGen.generate(e))
-}
-const asm = (source) => {
-    const asmGen = new AssemblyGenerator(ir(source))
-    return asmGen.generate()
-}
-const assemble = (source, run) => {
-    const rasm = new Assembler()
-    return rasm.assemble(asm(source), { out: 'asm', tmpname: 'asm', run })
-}
+const compile = (code, run) => exec(code, (source) => process.stdout.write(cs.assemble(source, { run })))
 
 const commandPool = Object.freeze({
-    'asm': (code) => exec(code, (source) => console.log(asm(source))),
-    'ir': (code) => exec(code, (source) => console.log(ir(source).join(EOL))),
-    'interpret': (code) => exec(code, (source) => interpret(source, printResult)),
-    'repl': () => exec(null, () => { while(true) interpret(rl.question('>>> '), printResult) }),
-    'compile': (code) => exec(code, (source) => process.stdout.write(assemble(source, false))),
-    'run': (code) => exec(code, (source) => process.stdout.write(assemble(source, true)))
+    'asm': (code) => exec(code, (source) => console.log(cs.asm(source))),
+    'ir': (code) => exec(code, (source) => console.log(cs.ir(source).join(EOL))),
+    'interpret': (code) => exec(code, (source) => cs.interpret(source, printResult)),
+    'repl': () => exec(null, () => { while(true) cs.interpret(rl.question('>>> '), printResult) }),
+    'compile': (code) => compile(code, false),
+    'run': (code) => compile(code, true)
 })
 
 const help = () => {
