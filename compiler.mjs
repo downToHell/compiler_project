@@ -49,9 +49,9 @@ const asm = (source) => {
     const asmGen = new AssemblyGenerator(ir(source))
     return asmGen.generate()
 }
-const assemble = (source) => {
+const assemble = (source, run) => {
     const rasm = new Assembler()
-    return rasm.assemble(asm(source), { out: 'asm', tmpname: 'asm' })
+    return rasm.assemble(asm(source), { out: 'asm', tmpname: 'asm', run })
 }
 
 const commandPool = Object.freeze({
@@ -59,7 +59,8 @@ const commandPool = Object.freeze({
     'ir': (code) => exec(code, (source) => console.log(ir(source).join(EOL))),
     'interpret': (code) => exec(code, (source) => interpret(source, printResult)),
     'repl': () => exec(null, () => { while(true) interpret(rl.question('>>> '), printResult) }),
-    'compile': (code) => exec(code, (source) => process.stdout.write(assemble(source)))
+    'compile': (code) => exec(code, (source) => process.stdout.write(assemble(source, false))),
+    'run': (code) => exec(code, (source) => process.stdout.write(assemble(source, true)))
 })
 
 const help = () => {

@@ -11,6 +11,7 @@ export function Assembler(){
 
         const tmpname = options.tmpname || 'asm'
         const out = options.out || 'a.out'
+        const run = options.run !== undefined && !!options.run
         
         const src = `${tmpname}.s`
         const stdlib = 'stdlib.s'
@@ -22,7 +23,7 @@ export function Assembler(){
             let stdout
             
             if (as === 'rasm'){
-                stdout = execFileSync('./rasm.sh', ['-q', '-o', out, src, stdlib], { shell: true })
+                stdout = execFileSync('./rasm.sh', [`-q${run ? 'r': ''}o`, out, src, stdlib], { shell: true })
             } else {
                 const src_obj = `${filename(src)}.o`
                 const stdlib_obj = `${filename(stdlib)}.o`
@@ -30,13 +31,15 @@ export function Assembler(){
                 execFileSync(as, ['-g', '-o', src_obj, src])
                 execFileSync(as, ['-g', '-o', stdlib_obj, stdlib])
                 execFileSync('ld', ['-o', out, '-static', src_obj, stdlib_obj])
-                stdout = execFileSync(`./${out}`, { shell: true })
 
+                if (run){
+                    stdout = execFileSync(`./${out}`, { shell: true })
+                }
                 fs.rmSync(out)
                 fs.rmSync(src_obj)
                 fs.rmSync(stdlib_obj)
             }
-            return stdout.toString()
+            return stdout ? stdout.toString() : ''
         } finally {
             fs.rmSync(src)
             fs.rmSync(stdlib)

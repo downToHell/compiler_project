@@ -17,7 +17,7 @@ ENVIRONMENT VARIABLES:
 function handle_process_died {
     if [ $? -ne 0 ]; then
         echo "Child process exited with status code: $?"
-        exit $?
+        exit 1
     fi
 }
 
@@ -27,7 +27,7 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-args=$(getopt hqi:o: $*)
+args=$(getopt hqri:o: $*)
 
 # if args could not be parsed (i.e. missing argument) exit
 if [ $? -ne 0 ]; then
@@ -37,6 +37,7 @@ set -- $args
 
 OUT_FILE="a.out"
 VERBOSE=1
+RUN=0
 FILES=()
 
 # handleopt: handle command line arguments and set according flags
@@ -57,6 +58,10 @@ do
         ;;
         -q)
         VERBOSE=0
+        shift
+        ;;
+        -r)
+        RUN=1
         shift
         ;;
         *)
@@ -110,7 +115,11 @@ for i in "${!FILES[@]}"; do
     fi
 done
 
-CMD="$CMD && ld -o $OUT_FILE -static ${OBJ_FILES[@]} && ./$OUT_FILE"
+CMD="$CMD && ld -o $OUT_FILE -static ${OBJ_FILES[@]}"
+
+if [ $RUN -eq 1 ]; then
+    CMD="$CMD && ./$OUT_FILE"
+fi
 
 if [ $VERBOSE -eq 1 ]; then
     echo $CMD
