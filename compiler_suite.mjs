@@ -45,8 +45,8 @@ const asm = (source) => {
 }
 const assemble = (source, options) => {
     options = options || {}
-    options.out = options.out || 'asm'
-    options.tmpname = options.tmpname || 'a.out'
+    options.out = options.out || 'a.out'
+    options.tmpname = options.tmpname || 'asm'
     options.run = options.run || false
 
     const rasm = new Assembler()
