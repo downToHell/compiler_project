@@ -1,0 +1,8 @@
+# describe(variable shadowing)
+var x = 0;
+
+if x == 0 then {
+    var x = 3;
+    print_int(x);
+}
+# assert(3)

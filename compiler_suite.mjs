@@ -8,39 +8,52 @@ import { TypeChecker } from './src/type_checker.mjs'
 import { Assembler } from './assembler.mjs'
 import { AssemblyGenerator } from './src/assembly_generator.mjs'
 
-const tcSym = new SymTab()
-const ipSym = new SymTab()
-const genSym = new SymTab()
+const tcSetup = () => {
+    const tcSym = new SymTab()
+    tcSym.addSymbol('clear', ClearFn)
+    tcSym.addSymbol('exit', ExitFn)
+    return tcSym
+}
 
-tcSym.addSymbol('clear', ClearFn)
-tcSym.addSymbol('exit', ExitFn)
+const ipSetup = () => {
+    const ipSym = new SymTab()
+    ipSym.addSymbol('print_int', (i) => console.log(i))
+    ipSym.addSymbol('print_bool', (b) => console.log(b))
+    ipSym.addSymbol('read_int', () => rl.questionInt())
+    ipSym.addSymbol('clear', () => console.clear())
+    ipSym.addSymbol('exit', () => process.exit())
+    return ipSym
+}
 
-ipSym.addSymbol('print_int', (i) => console.log(i))
-ipSym.addSymbol('print_bool', (b) => console.log(b))
-ipSym.addSymbol('read_int', () => rl.questionInt())
-ipSym.addSymbol('clear', () => console.clear())
-ipSym.addSymbol('exit', () => process.exit())
+let tcSym = tcSetup()
+let ipSym = ipSetup()
+let genSym = new SymTab()
 
 const parse = (source) => {
     const scn = new Tokenizer(source)
     const parser = new Parser(scn.tokens())
     return parser.parse()
 }
-const typecheck = (node) => {
+const typecheck = (node, options) => {
+    if (options?.reset) tcSym = tcSetup()
     const typechecker = new TypeChecker(tcSym)
     return typechecker.typecheck(node)
 }
-const parseAndCheck = (source) => parse(source).filter(e => typecheck(e) && e)
-const interpret = (source, callback) => {
+const parseAndCheck = (source, options) => {
+    return parse(source).filter((e, i) => typecheck(e, { reset: options?.reset && i == 0 }) && e)
+}
+const interpret = (source, options) => {
+    if (options?.reset) ipSym = ipSetup()
     const interpreter = new Interpreter(ipSym)
-    parseAndCheck(source).forEach(e => callback(interpreter.interpret(e)))
+    parseAndCheck(source, options).forEach(e => options.callback(interpreter.interpret(e)))
 }
-const ir = (source) => {
+const ir = (source, options) => {
+    if (options?.reset) genSym = new SymTab()
     const irGen = new IRGenerator(genSym)
-    return parseAndCheck(source).flatMap(e => irGen.generate(e))
+    return parseAndCheck(source, options).flatMap(e => irGen.generate(e))
 }
-const asm = (source) => {
-    const asmGen = new AssemblyGenerator(ir(source))
+const asm = (source, options) => {
+    const asmGen = new AssemblyGenerator(ir(source, options))
     return asmGen.generate()
 }
 const assemble = (source, options) => {
@@ -48,9 +61,10 @@ const assemble = (source, options) => {
     options.out = options.out || 'a.out'
     options.tmpname = options.tmpname || 'asm'
     options.run = options.run || false
+    options.reset = options.reset || false
 
     const rasm = new Assembler()
-    return rasm.assemble(asm(source), options)
+    return rasm.assemble(asm(source, { reset: options.reset }), options)
 }
 
 export { parse, typecheck, parseAndCheck, interpret, ir, asm, assemble }

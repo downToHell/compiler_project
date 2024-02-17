@@ -11,8 +11,8 @@ const compile = (code, run) => exec(code, (source) => process.stdout.write(cs.as
 const commandPool = Object.freeze({
     'asm': (code) => exec(code, (source) => console.log(cs.asm(source))),
     'ir': (code) => exec(code, (source) => console.log(cs.ir(source).join(EOL))),
-    'interpret': (code) => exec(code, (source) => cs.interpret(source, printResult)),
-    'repl': () => exec(null, () => { while(true) cs.interpret(rl.question('>>> '), printResult) }),
+    'interpret': (code) => exec(code, (source) => cs.interpret(source, { callback: printResult })),
+    'repl': () => exec(null, () => { while(true) cs.interpret(rl.question('>>> '), { callback: printResult }) }),
     'compile': (code) => compile(code, false),
     'run': (code) => compile(code, true)
 })

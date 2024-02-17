@@ -1,0 +1,12 @@
+# describe(iterative factorial)
+# input(5, 7)
+var n = read_int();
+var n1 = n;
+var res = 1;
+
+while n1 > 0 do {
+    res = n1 * res;
+    n1 = n1 - 1;
+};
+print_int(res);
+# assert(120, 5040)

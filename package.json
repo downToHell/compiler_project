@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha.js test/"
+    "test": "./node_modules/mocha/bin/mocha.js test/",
+    "test-all": "./test_runner.mjs test_programs/"
   },
   "author": "Thomas Thaler",
   "license": "UNLICENSED",

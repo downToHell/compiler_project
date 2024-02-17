@@ -1,0 +1,12 @@
+# describe(factor generation)
+# input(8, 9, 12, 25, 1303)
+var n = read_int();
+var n1 = n;
+
+while n1 > 0 do {
+    if n % n1 == 0 then {
+        print_int(n1);
+    }
+    n1 = n1 - 1;
+}
+# assert([8, 4, 2, 1], [9, 3, 1], [12, 6, 4, 3, 2, 1], [25, 5, 1], [1303, 1])

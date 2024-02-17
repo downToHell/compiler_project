@@ -181,4 +181,4 @@ function Tokenizer(inp, options){
     }
 }
 
-export { TokenType, Token, Tokenizer, isNumber }
+export { TokenType, Token, Tokenizer, isNumber, isLetter }
