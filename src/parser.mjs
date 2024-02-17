@@ -201,7 +201,7 @@ function Parser(tokens){
         if (match(TokenType.BOOL_LITERAL)) return this.parseBoolLiteral(loc)
         if (match(TokenType.UNIT_LITERAL)) return this.parseUnitLiteral(loc)
         if (match(TokenType.IDENTIFIER)) return this.parseIdentifier(loc)
-        throw new Error(`${loc}: Expected one of ${[TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
+        throw new Error(`${loc}: Expected one of ${[TokenType.IF, TokenType.VAR, TokenType.WHILE, TokenType.LBRACE, TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
     }
     this.parseGroup = function(loc){
         expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
