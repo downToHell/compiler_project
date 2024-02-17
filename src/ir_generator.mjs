@@ -7,7 +7,7 @@ function IRGenerator(_env){
     let next_var = 1
     let next_label = 1
 
-    const env = _env || new SymTab()
+    let env = _env || new SymTab()
     const var_unit = new ir.IRVar('unit')
     env.addIfAbsent('unit', var_unit)
 
@@ -168,11 +168,13 @@ function IRGenerator(_env){
         return body_res
     }
     this.visitBlock = function(node){
+        env = new SymTab(env)
         let last
 
         for (const k of node.exprs){
             last = visit(k)
         }
+        env = env.getParent()
         return last
     }
     this.visitDeclaration = function(node){
