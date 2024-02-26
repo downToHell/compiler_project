@@ -119,6 +119,7 @@ if (!process.argv[2]){
 
 if (process.env.CSCP_ASM === 'rasm'){
     console.log(`${YELLOW}Warning:${RESET} the test runner only works with a local installation of 'as'!`)
+    process.exit(1)
 }
 const runner = new TestRunner()
 runner.run(process.argv[2])
