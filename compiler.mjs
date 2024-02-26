@@ -7,12 +7,21 @@ import * as cs from './compiler_suite.mjs'
 
 const printResult = (res) => console.log(res === null || res === undefined ? 'unit' : res)
 const compile = (code, run) => exec(code, (source) => process.stdout.write(cs.assemble(source, { run })))
+const repl = () => {
+    while (true){
+        try {
+            cs.interpret(rl.question('>>> '), { callback: printResult })
+        } catch (e) {
+            console.error(e.message)
+        }
+    }
+}
 
 const commandPool = Object.freeze({
     'asm': (code) => exec(code, (source) => console.log(cs.asm(source))),
     'ir': (code) => exec(code, (source) => console.log(cs.ir(source).join(EOL))),
     'interpret': (code) => exec(code, (source) => cs.interpret(source, { callback: printResult })),
-    'repl': () => exec(null, () => { while(true) cs.interpret(rl.question('>>> '), { callback: printResult }) }),
+    repl,
     'compile': (code) => compile(code, false),
     'run': (code) => compile(code, true)
 })
