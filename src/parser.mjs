@@ -10,6 +10,7 @@ import {
     IfExpr,
     Literal,
     LogicalExpr,
+    Module,
     TypeExpr,
     UnaryExpr,
     WhileExpr
@@ -73,13 +74,16 @@ function Parser(tokens){
     }
 
     this.parse = function(){
+        return this.parseModule(peek().loc)
+    }
+    this.parseModule = function(loc){
         let exprs = []
 
         do {
             exprs.push(this.parseExpression(peek().loc))
         } while (consume(TokenType.SEMICOLON) && peek().type != TokenType.END)
         expect(TokenType.END, `EOF expected, got ${peek().type}`)
-        return exprs
+        return new Module(exprs, loc)
     }
     this.parseExpression = function(loc){
         return this.parseAssignment(loc)

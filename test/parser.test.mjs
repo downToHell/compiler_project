@@ -17,13 +17,6 @@ import {
     WhileExpr
 } from '../src/ast.mjs'
 
-Array.prototype.first = function(){
-    if (this.length == 0){
-        throw new Error('No such element')
-    }
-    return this[0]
-}
-
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
     return new Parser(scn.tokens())

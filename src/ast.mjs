@@ -78,3 +78,16 @@ export function TypeExpr(type, expr, loc){
     this.type = type
     this.expr = expr
 }
+
+export function Module(exprs, loc){
+    Expression.call(this, loc)
+    this.exprs = exprs
+    
+    this.first = () => {
+        if (this.exprs.length == 0){
+            throw new Error('No such element')
+        }
+        return exprs[0]
+    }
+    this.each = (callback) => callback(exprs)
+}
