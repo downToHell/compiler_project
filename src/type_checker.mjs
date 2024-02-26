@@ -46,7 +46,7 @@ function TypeChecker(_env){
             case ast.IfExpr: return this.typeOfIfExpr(node)
             case ast.WhileExpr: return this.typeOfWhileExpr(node)
             case ast.Assignment: return this.typeOfAssignment(node)
-            case ast.Declaration: return this.typeOfDeclaration(node)
+            case ast.VarDecl: return this.typeOfVarDeclaration(node)
             case ast.TypeExpr: return this.typeOfTypeExpr(node)
             case ast.Grouping: return this.typecheck(node.expr)
             default: throw new Error(`Unknown ast node: ${node.constructor.name}`)
@@ -112,7 +112,7 @@ function TypeChecker(_env){
         this.typecheck(node.body)
         return Unit
     }
-    this.typeOfDeclaration = function(node){
+    this.typeOfVarDeclaration = function(node){
         const type = this.typecheck(node.initializer)
         env.addSymbol(node.ident.name, type)
         return type

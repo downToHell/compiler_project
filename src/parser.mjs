@@ -4,7 +4,6 @@ import {
     BinaryExpr,
     Block,
     Call,
-    Declaration,
     Grouping,
     Identifier,
     IfExpr,
@@ -13,6 +12,7 @@ import {
     Module,
     TypeExpr,
     UnaryExpr,
+    VarDecl,
     WhileExpr
 } from './ast.mjs'
 import { SourceLocation } from './source_context.mjs'
@@ -112,7 +112,7 @@ function Parser(tokens){
         expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
         const initializer = this.parseExpression(peek().loc)
 
-        return new Declaration(ident, type ? new TypeExpr(type, initializer, loc) : initializer, loc)
+        return new VarDecl(ident, type ? new TypeExpr(type, initializer, loc) : initializer, loc)
     }
     this.parseWhileExpression = function(loc){
         expect(TokenType.WHILE, `Expected ${TokenType.WHILE}, got ${peek().type}`)

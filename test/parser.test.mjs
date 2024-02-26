@@ -6,7 +6,6 @@ import {
     BinaryExpr,
     Block,
     Call,
-    Declaration,
     Grouping,
     Identifier,
     IfExpr,
@@ -14,6 +13,7 @@ import {
     LogicalExpr,
     TypeExpr,
     UnaryExpr,
+    VarDecl,
     WhileExpr
 } from '../src/ast.mjs'
 
@@ -249,7 +249,7 @@ describe('Parser tests', function(){
         let parser = makeParser('var x = 123 + 4')
         let expr = parser.parse().first()
 
-        assert.ok(expr instanceof Declaration)
+        assert.ok(expr instanceof VarDecl)
         assert.ok(expr.ident instanceof Identifier)
         assert.ok(expr.initializer instanceof BinaryExpr)
     })
@@ -258,7 +258,7 @@ describe('Parser tests', function(){
         let parser = makeParser('var x: Int = true')
         let expr = parser.parse().first()
 
-        assert.ok(expr instanceof Declaration)
+        assert.ok(expr instanceof VarDecl)
         assert.ok(expr.ident instanceof Identifier)
         assert.ok(expr.initializer instanceof TypeExpr)
         assert.ok(expr.initializer.type instanceof Identifier)
@@ -271,7 +271,7 @@ describe('Parser tests', function(){
 
         assert.ok(expr instanceof BinaryExpr)
         assert.ok(expr.left instanceof Grouping)
-        assert.ok(expr.left.expr instanceof Declaration)
+        assert.ok(expr.left.expr instanceof VarDecl)
     })
 
     it('rejects declaration without initializer', function(){

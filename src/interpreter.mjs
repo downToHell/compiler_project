@@ -31,7 +31,7 @@ function Interpreter(_env){
             case ast.IfExpr: return this.evaluateIfExpr(node)
             case ast.WhileExpr: return this.evaluateWhileExpression(node)
             case ast.Call: return this.evaluateCall(node)
-            case ast.Declaration: return this.evaluateDeclaration(node)
+            case ast.VarDecl: return this.evaluateVarDeclaration(node)
             case ast.Assignment: return this.evaluateAssignment(node)
             case ast.TypeExpr: return this.interpret(node.expr) // TODO: typechecking?
             default: {
@@ -81,7 +81,7 @@ function Interpreter(_env){
         const fn = env.getSymbol(node.target.name)
         return fn(...node.args.map(f => this.interpret(f)))
     }
-    this.evaluateDeclaration = function(node){
+    this.evaluateVarDeclaration = function(node){
         const value = this.interpret(node.initializer)
         env.addSymbol(node.ident.name, value)
         return value

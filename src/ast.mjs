@@ -62,7 +62,7 @@ export function Call(target, args, loc){
     this.args = args
 }
 
-export function Declaration(ident, initializer, loc){
+export function VarDecl(ident, initializer, loc){
     Expression.call(this, loc)
     this.ident = ident
     this.initializer = initializer

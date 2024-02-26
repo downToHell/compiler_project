@@ -34,7 +34,7 @@ function IRGenerator(_env){
             case ast.Block: return this.visitBlock(node)
             case ast.TypeExpr:
             case ast.Grouping: return visit(node.expr)
-            case ast.Declaration: return this.visitDeclaration(node)
+            case ast.VarDecl: return this.visitVarDeclaration(node)
             case ast.Assignment: return this.visitAssignment(node)
             case ast.Call: return this.visitCall(node)
             default: {
@@ -177,7 +177,7 @@ function IRGenerator(_env){
         env = env.getParent()
         return last
     }
-    this.visitDeclaration = function(node){
+    this.visitVarDeclaration = function(node){
         const _var = newVar()
         emit(new ir.Copy(visit(node.initializer), _var))
         env.addSymbol(node.ident.name, _var)
