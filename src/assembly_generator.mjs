@@ -19,14 +19,15 @@ function Locals(variables){
 
 const getIRVariables = (instructions) => {
     const res = {}
+    const isIRVar = (obj) => ir.IRVar.prototype.isPrototypeOf(obj)
 
     for (const ins of instructions){
         for (const field of ins.fields()){
-            if (ir.IRVar.prototype.isPrototypeOf(ins[field])){
+            if (isIRVar(ins[field])){
                 res[ins[field].name] = ins[field]
             } else if (Array.isArray(ins[field])){
                 for (const v of ins[field]){
-                    if (ir.IRVar.prototype.isPrototypeOf(ins[field])){
+                    if (isIRVar(ins[field])){
                         res[ins[field].name] = ins[field]
                     }
                 }
