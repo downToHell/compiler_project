@@ -28,7 +28,7 @@ function TestRunner(){
         return fs.readdirSync(dir)
                  .map(f => path.join(dir, f))
                  .filter(f => fs.statSync(f).isFile())
-                 .filter(f => path.extname(f) === '.txt')
+                 .filter(f => path.extname(f) === '.hycs')
     }
     const getTestCases = (file) => {
         const contents = fs.readFileSync(file).toString()
