@@ -10,7 +10,7 @@ const compile = (code, run) => exec(code, (source) => process.stdout.write(cs.as
 const repl = () => {
     while (true){
         try {
-            cs.interpret(rl.question('>>> '), { callback: printResult })
+            cs.interpret(rl.question('>>> '), { callback: printResult, repl: true })
         } catch (e) {
             console.error(e.message)
         }

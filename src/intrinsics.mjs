@@ -44,6 +44,7 @@ const {
 } = Mnemonic
 
 const argMap = Object.freeze([RDI, RSI, RDX, RCX, R8, R9])
+const builtin = Object.freeze(['print_int', 'print_bool', 'read_int', 'pow'])
 
 const _unwrap = (options) => {
     options = options || {}
@@ -162,4 +163,4 @@ const allIntrinsics = {
     '>=': ge
 }
 
-export { Register, Mnemonic, argMap, allIntrinsics }
+export { Register, Mnemonic, argMap, builtin, allIntrinsics }

@@ -3,29 +3,75 @@ import * as ir from './ir.mjs'
 import { SymTab } from './symtab.mjs'
 import { TokenType } from './tokenizer.mjs'
 
-function IRGenerator(_env){
-    let next_var = 1
-    let next_label = 1
-
+function IRContext(_env){
     let env = _env || new SymTab()
-    const var_unit = new ir.IRVar('unit')
-    env.addIfAbsent('unit', var_unit)
+    const varUnit = new ir.IRVar('unit')
+    env.addIfAbsent('unit', varUnit)
 
-    const ins = []
+    let data = {}
+    let funStack = []
+    let nextVar = 1
+    let nextLabel = 1
 
-    const emit = (i) => ins.push(i)
-    const newVar = () => {
-        const var_name = `x${next_var++}` 
-        const _var = new ir.IRVar(var_name)
-        env.addSymbol(var_name, _var)
+    this.getSymbol = (sym) => env.getSymbol(sym)
+    this.addSymbol = (sym, value) => env.addSymbol(sym, value)
+    this.newVar = (name) => {
+        const _var =  new ir.IRVar(name ? name : `x${nextVar++}`)
+        env.addSymbol(_var.name, _var)
         return _var
     }
-    const newLabel = () => new ir.Label(`L${next_label++}`)
+    this.newLabel = (name) => new ir.Label(name ? name : `L${nextLabel++}`)
+
+    this.beginFunction = (node) => {
+        this.beginScope()
+        const args = node.args.map(a => {
+            const _var = this.newVar()
+            this.addSymbol(a.expr.name, _var)
+            return _var
+        })
+        data[node.ident.name] = { args, ins: [] }
+        funStack.push(node.ident.name)
+        this.emit(this.newLabel(node.ident.name))
+    }
+    this.endFunction = (ret) => {
+        this.endScope()
+        this.emit(new ir.Return(ret))
+        funStack.pop()
+    }
+    this.beginScope = () => env = new SymTab(env)
+    this.endScope = () => env = env.getParent()
+    
+    this.emit = (ins) => {
+        const func = funStack.at(-1)
+        data[func].ins.push(ins)
+    }
+
+    this.join = function(separator){
+        const res = []
+
+        for (const obj of this){
+            res.push(obj.ins.join(separator))
+        }
+        return res.join(separator)
+    }
+    this[Symbol.iterator] = function *(){
+        for (const k of Object.keys(data)){
+            yield data[k]
+        }
+    }
+}
+
+function IRGenerator(_env){
+    const ctx = new IRContext(_env)
+
+    const emit = (ins) => ctx.emit(ins)
+    const newVar = (name) => ctx.newVar(name)
+    const newLabel = (name) => ctx.newLabel(name)
 
     const visit = (node) => {
         switch (node.constructor){
             case ast.Literal: return this.visitLiteral(node)
-            case ast.Identifier: return env.getSymbol(node.name)
+            case ast.Identifier: return ctx.getSymbol(node.name)
             case ast.BinaryExpr: return this.visitBinaryExpr(node)
             case ast.LogicalExpr: return this.visitLogicalExpr(node)
             case ast.UnaryExpr: return this.visitUnaryExpr(node)
@@ -34,9 +80,11 @@ function IRGenerator(_env){
             case ast.Block: return this.visitBlock(node)
             case ast.TypeExpr:
             case ast.Grouping: return visit(node.expr)
+            case ast.FunDecl: return this.visitFunDeclaration(node)
             case ast.VarDecl: return this.visitVarDeclaration(node)
             case ast.Assignment: return this.visitAssignment(node)
             case ast.Call: return this.visitCall(node)
+            case ast.Module: return this.visitModule(node)
             default: {
                 throw new Error(`Unknown ast node: ${node.constructor.name}`)
             }
@@ -44,13 +92,12 @@ function IRGenerator(_env){
     }
 
     this.generate = function(node){
-        ins.length = 0
         visit(node)
-        return ins
+        return ctx
     }
     this.visitLiteral = function(node){
         if (node.value === null){
-            return var_unit
+            return ctx.getSymbol('unit')
         }
         const _var = newVar()
         
@@ -168,23 +215,28 @@ function IRGenerator(_env){
         return body_res
     }
     this.visitBlock = function(node){
-        env = new SymTab(env)
+        ctx.beginScope()
         let last
 
         for (const k of node.exprs){
             last = visit(k)
         }
-        env = env.getParent()
+        ctx.endScope()
         return last
+    }
+    this.visitFunDeclaration = function(node){
+        ctx.beginFunction(node)
+        const val = visit(node.body)
+        ctx.endFunction(val)
     }
     this.visitVarDeclaration = function(node){
         const _var = newVar()
         emit(new ir.Copy(visit(node.initializer), _var))
-        env.addSymbol(node.ident.name, _var)
+        ctx.addSymbol(node.ident.name, _var)
         return _var
     }
     this.visitAssignment = function(node){
-        const _var = env.getSymbol(node.target.name)
+        const _var = ctx.getSymbol(node.target.name)
         emit(new ir.Copy(visit(node.expr), _var))
         return _var
     }
@@ -192,6 +244,11 @@ function IRGenerator(_env){
         const _var = newVar()
         emit(new ir.Call(node.target.name, node.args.map(a => visit(a)), _var))
         return _var
+    }
+    this.visitModule = function(node){
+        ctx.beginFunction({ args: [], ident: { name: 'main' }})
+        node.exprs.forEach(n => visit(n))
+        ctx.endFunction()
     }
 }
 

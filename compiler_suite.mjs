@@ -40,17 +40,18 @@ const typecheck = (node, options) => {
     return typechecker.typecheck(node)
 }
 const parseAndCheck = (source, options) => {
-    return parse(source).each((exprs) => exprs.filter((e, i) => typecheck(e, { reset: options?.reset && i == 0 }) && e))
+    const module = parse(source)
+    return typecheck(module, { reset: options?.reset }) && module
 }
 const interpret = (source, options) => {
     if (options?.reset) ipSym = ipSetup()
     const interpreter = new Interpreter(ipSym)
-    parseAndCheck(source, options).forEach(e => options.callback(interpreter.interpret(e)))
+    interpreter.interpret(parseAndCheck(source, options)).forEach(r => options?.repl && options.callback(r))
 }
 const ir = (source, options) => {
     if (options?.reset) genSym = new SymTab()
     const irGen = new IRGenerator(genSym)
-    return parseAndCheck(source, options).flatMap(e => irGen.generate(e))
+    return irGen.generate(parseAndCheck(source, options))
 }
 const asm = (source, options) => {
     const asmGen = new AssemblyGenerator(ir(source, options))

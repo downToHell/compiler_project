@@ -60,3 +60,8 @@ export function Label(name){
     Instruction.call(this)
     this.name = name
 }
+
+export function Return(value){
+    Instruction.call(this)
+    this.value = value
+}
