@@ -22,6 +22,9 @@ const formatPass = (msg) => {
 const formatFail = (msg) => {
     return `${TAB}${TAB}${RED}${X_MARK} fail: ${msg}${RESET}`
 }
+const formatValue = (value) => {
+    return value == undefined ? '<no input>' : value.join(', ')
+}
 
 function TestRunner(){
     const discover = (dir) => {
@@ -73,7 +76,7 @@ ${TAB}${TAB}${TAB}${e.message}${EOL}`)
             const value = input[i]
 
             const startTime = Date.now()
-            let output = runTest('asm', value)
+            let output = runTest('asm', value?.join(EOL))
             time += Date.now() - startTime
 
             if (output.endsWith(EOL)){
@@ -82,10 +85,10 @@ ${TAB}${TAB}${TAB}${e.message}${EOL}`)
             const values = output == '' ? [] : output.split(EOL)
 
             if (checkAssertions(c.assertions[i], values)){
-                console.log(formatPass(value == undefined ? '<no input>' : value))
+                console.log(formatPass(formatValue(value)))
                 pass++
             } else {
-                const msg = formatFail(`${value}
+                const msg = formatFail(`${formatValue(value)}
 ${TAB}${TAB}${TAB}expected [${c.assertions[i].join(', ')}] got [${values.join(', ')}]`)
                 console.error(msg)
                 fail++

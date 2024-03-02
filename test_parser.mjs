@@ -43,27 +43,7 @@ export const parse = (src) => {
         }
         return buf
     }
-    const describe = () => {
-        expect('(')
-        let buf = ''
-
-        while (!ctx.isEOF() && !ctx.match(')')){
-            buf += ctx.advance()
-        }
-        expect(')')
-        return buf
-    }
-    const input = () => {
-        expect('(')
-        const res = []
-
-        while (!ctx.isEOF() && !ctx.match(')')){
-            res.push(parseValue())
-        }
-        expect(')')
-        return res
-    }
-    const assert = () => {
+    const parseArray = () => {
         expect('(')
         const res = []
 
@@ -85,6 +65,18 @@ export const parse = (src) => {
         expect(')')
         return res
     }
+    const describe = () => {
+        expect('(')
+        let buf = ''
+
+        while (!ctx.isEOF() && !ctx.match(')')){
+            buf += ctx.advance()
+        }
+        expect(')')
+        return buf
+    }
+    const input = () => parseArray()
+    const assert = () => parseArray()
     const out = {}
     const code = []
 
