@@ -3,9 +3,11 @@ import { SymTab } from './symtab.mjs'
 import { 
     ArithmeticNegation,
     ArithmeticOp,
+    BasicTypes,
     Bool,
     ComparisonOp,
     EqualityOp,
+    FunType,
     Int,
     LogicalNegation,
     LogicalOp,
@@ -46,9 +48,11 @@ function TypeChecker(_env){
             case ast.IfExpr: return this.typeOfIfExpr(node)
             case ast.WhileExpr: return this.typeOfWhileExpr(node)
             case ast.Assignment: return this.typeOfAssignment(node)
+            case ast.FunDecl: return this.typeOfFunDeclaration(node)
             case ast.VarDecl: return this.typeOfVarDeclaration(node)
             case ast.TypeExpr: return this.typeOfTypeExpr(node)
             case ast.Grouping: return this.typecheck(node.expr)
+            case ast.Module: return node.exprs.map(n => this.typecheck(n))
             default: throw new Error(`Unknown ast node: ${node.constructor.name}`)
         }
     }
@@ -111,6 +115,19 @@ function TypeChecker(_env){
         }
         this.typecheck(node.body)
         return Unit
+    }
+    this.typeOfFunDeclaration = function(node){
+        const toType = (f) => {
+            const type = BasicTypes[f.name]
+            if (!type){
+                throw new Error(`Unknown type: ${f.name}`)
+            }
+            return type
+        }
+        const args = node.args.map(f => toType(f.type))
+        const fun = new FunType(args, toType(node.retType))
+        env.addSymbol(node.ident.name, fun)
+        return fun
     }
     this.typeOfVarDeclaration = function(node){
         const type = this.typecheck(node.initializer)

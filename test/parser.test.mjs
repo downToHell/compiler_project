@@ -6,6 +6,7 @@ import {
     BinaryExpr,
     Block,
     Call,
+    FunDecl,
     Grouping,
     Identifier,
     IfExpr,
@@ -341,5 +342,62 @@ describe('Parser tests', function(){
         assert.ok(expr.cond instanceof Literal)
         assert.ok(expr.body instanceof Block)
         assert.strictEqual(expr.body.exprs.length, 2)
+    })
+
+    it('accepts simple function declaration', function(){
+        let parser = makeParser('fun square(x: Int): Int = x * x')
+        let expr = parser.parse().first()
+
+        assert.ok(expr instanceof FunDecl)
+        assert.ok(expr.ident instanceof Identifier)
+        assert.ok(expr.retType instanceof Identifier)
+        assert.strictEqual(expr.args.length, 1)
+        assert.ok(expr.args[0] instanceof TypeExpr)
+        assert.ok(expr.args[0].expr instanceof Identifier)
+        assert.strictEqual(expr.args[0].expr.name, 'x')
+        assert.strictEqual(expr.args[0].type.name, 'Int')
+        assert.strictEqual(expr.ident.name, 'square')
+        assert.strictEqual(expr.retType.name, 'Int')
+    })
+
+    it('accepts no-arg function', function(){
+        let parser = makeParser('fun print_twice(): Unit { print_int(1); print_int(2); }')
+        assert.doesNotThrow(() => parser.parse())
+    })
+
+    it('accepts multi-arg function', function(){
+        let parser = makeParser('fun logicalOr(a: Bool, b: Bool): Bool = a or b')
+        let expr = parser.parse().first()
+
+        assert.ok(expr instanceof FunDecl)
+        assert.ok(expr.ident instanceof Identifier)
+        assert.ok(expr.retType instanceof Identifier)
+        assert.strictEqual(expr.args.length, 2)
+        assert.ok(expr.args[0] instanceof TypeExpr)
+        assert.ok(expr.args[1] instanceof TypeExpr)
+        assert.ok(expr.args[0].expr instanceof Identifier)
+        assert.ok(expr.args[1].expr instanceof Identifier)
+        assert.ok(expr.args[0].type instanceof Identifier)
+        assert.ok(expr.args[1].type instanceof Identifier)
+        assert.strictEqual(expr.args[0].expr.name, 'a')
+        assert.strictEqual(expr.args[1].expr.name, 'b')
+        assert.strictEqual(expr.args[0].type.name, 'Bool')
+        assert.strictEqual(expr.args[1].type.name, 'Bool')
+        assert.strictEqual(expr.retType.name, 'Bool')
+    })
+
+    it('rejects functions without return type', function(){
+        let parser = makeParser('fun noRet() = print_int(1)')
+        assert.throws(() => parser.parse())
+    })
+
+    it('rejects untyped arguments', function(){
+        let parser = makeParser('fun sum(a, b): Int = a + b')
+        assert.throws(() => parser.parse())
+    })
+
+    it('rejects trailing comma in function declaration', function(){
+        let parser = makeParser('fun invalidArgs(a: Int, b: Int,): Int = a and b')
+        assert.throws(() => parser.parse())
     })
 })

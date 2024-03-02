@@ -91,4 +91,9 @@ describe('Interpreter tests', function(){
     it('rejects unscoped variable', function(){
         assert.throws(() => interpret('{ var x = 3; { var y = 0; } y }'))
     })
+
+    it('evaluates function declarations', function(){
+        const value = interpret('{ fun square(x: Int): Int = x * x; square(4) }')
+        assert.strictEqual(value, 16)
+    })
 })

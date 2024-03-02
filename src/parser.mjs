@@ -4,6 +4,7 @@ import {
     BinaryExpr,
     Block,
     Call,
+    FunDecl,
     Grouping,
     Identifier,
     IfExpr,
@@ -101,6 +102,41 @@ function Parser(tokens){
         }
         return new IfExpr(cond, body, elsz, loc)
     }
+    this.parseArgument = function(loc){
+        const ident = this.parseIdentifier(peek().loc)
+        expect(TokenType.COLON, `Expected ${TokenType.COLON}, got ${peek().type}`)
+        const type = this.parseIdentifier(peek().loc)
+        return new TypeExpr(type, ident, loc)
+    }
+    this.parseArgumentList = function(){
+        expect(TokenType.LPAREN, `Expected ${TokenType.LPAREN}, got ${peek().type}`)
+        const args = []
+
+        if (match(TokenType.IDENTIFIER)){
+            do {
+                args.push(this.parseArgument(peek().loc))
+            } while (consume(TokenType.COMMA))
+        }
+        expect(TokenType.RPAREN, `Expected ${TokenType.RPAREN}, got ${peek().type}`)
+        return args
+    }
+    this.parseFunDeclaration = function(loc){
+        expect(TokenType.FUN, `Expected ${TokenType.FUN}, got ${peek().type}`)
+        const ident = this.parseIdentifier(peek().loc)
+        const args = this.parseArgumentList()
+        expect(TokenType.COLON, `Expected ${TokenType.COLON}, got ${peek().type}`)
+        const retType = this.parseIdentifier(peek().loc)
+        let body
+
+        if (match(TokenType.LBRACE)){
+            body = this.parseBlockExpression(peek().loc)
+        } else if (consume(TokenType.EQ)) {
+            body = this.parseLeftPrecedenceExpr(peek().loc)
+        } else {
+            throw new Error(`${loc}: Expected ${[TokenType.LBRACE, TokenType.EQ].join(', ')}, got ${peek().type}`)
+        }
+        return new FunDecl(ident, args, retType, body, loc)
+    }
     this.parseVarDeclaration = function(loc){
         expect(TokenType.VAR, `Expected ${TokenType.VAR}, got ${peek().type}`)
         const ident = this.parseIdentifier(peek().loc)
@@ -197,6 +233,7 @@ function Parser(tokens){
     }
     this.parseFactor = function(loc){
         if (match(TokenType.IF)) return this.parseIfExpression(loc)
+        if (match(TokenType.FUN)) return this.parseFunDeclaration(loc)
         if (match(TokenType.VAR)) return this.parseVarDeclaration(loc)
         if (match(TokenType.WHILE)) return this.parseWhileExpression(loc)
         if (match(TokenType.LBRACE)) return this.parseBlockExpression(loc)
@@ -205,7 +242,7 @@ function Parser(tokens){
         if (match(TokenType.BOOL_LITERAL)) return this.parseBoolLiteral(loc)
         if (match(TokenType.UNIT_LITERAL)) return this.parseUnitLiteral(loc)
         if (match(TokenType.IDENTIFIER)) return this.parseIdentifier(loc)
-        throw new Error(`${loc}: Expected one of ${[TokenType.IF, TokenType.VAR, TokenType.WHILE, TokenType.LBRACE, TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
+        throw new Error(`${loc}: Expected one of ${[TokenType.IF, TokenType.FUN, TokenType.VAR, TokenType.WHILE, TokenType.LBRACE, TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
     }
     this.parseGroup = function(loc){
         expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)

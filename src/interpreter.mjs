@@ -31,9 +31,11 @@ function Interpreter(_env){
             case ast.IfExpr: return this.evaluateIfExpr(node)
             case ast.WhileExpr: return this.evaluateWhileExpression(node)
             case ast.Call: return this.evaluateCall(node)
+            case ast.FunDecl: return this.evaluateFunDeclaration(node)
             case ast.VarDecl: return this.evaluateVarDeclaration(node)
             case ast.Assignment: return this.evaluateAssignment(node)
             case ast.TypeExpr: return this.interpret(node.expr) // TODO: typechecking?
+            case ast.Module: return node.exprs.map(n => this.interpret(n))
             default: {
                 throw new Error(`Unknown ast node: ${node.constructor.name}`)
             }
@@ -80,6 +82,22 @@ function Interpreter(_env){
     this.evaluateCall = function(node){
         const fn = env.getSymbol(node.target.name)
         return fn(...node.args.map(f => this.interpret(f)))
+    }
+    this.evaluateFunDeclaration = function(node){
+        env.addSymbol(node.ident.name, (...args) => {
+            env = new SymTab(env)
+
+            if (args.length < node.args.length){
+                throw new Error(`Missing arguments for ${node.ident.name}`)
+            } else if (args.length > node.args.length){
+                throw new Error(`Too many arguments for ${node.ident.name}`)
+            }
+            node.args.forEach((f, i) => env.addSymbol(f.expr.name, args[i]))
+            const ret = this.interpret(node.body)
+            env = env.getParent()
+            return ret
+        })
+        return null
     }
     this.evaluateVarDeclaration = function(node){
         const value = this.interpret(node.initializer)

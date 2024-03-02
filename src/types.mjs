@@ -57,6 +57,7 @@ function OverloadedFunType(args, ret){
 export const Int = new BasicType('Int')
 export const Bool = new BasicType('Bool')
 export const Unit = new BasicType('Unit')
+export const BasicTypes = { Int, Bool, Unit }
 
 export const ArithmeticOp = new FunType([Int, Int], Int)
 export const ArithmeticNegation = new FunType([Int], Int)
@@ -69,3 +70,5 @@ export const PrintBoolFn = new FunType([Bool], Unit)
 export const ReadIntFn = new FunType([], Int)
 export const ClearFn = new FunType([], Unit)
 export const ExitFn = new FunType([], Unit)
+
+export { FunType }

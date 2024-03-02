@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import { Parser } from '../src/parser.mjs'
 import { Tokenizer } from '../src/tokenizer.mjs'
 import { TypeChecker } from '../src/type_checker.mjs'
-import { Bool, Int, Unit } from '../src/types.mjs'
+import { Bool, FunType, Int, Unit } from '../src/types.mjs'
 
 const typecheck = (src) => {
     const scn = new Tokenizer(src)
@@ -89,5 +89,19 @@ describe('Typechecker tests', function(){
         assert.throws(() => typecheck('print_int(true)'))
         assert.throws(() => typecheck('print_bool(3)'))
         assert.throws(() => typecheck('print_int(while 3 < 5 do 3)'))
+    })
+
+    it('typechecks simple function declarations', function(){
+        let res = typecheck('fun square(x: Int): Int = x * x')
+        assert.ok(res instanceof FunType)
+        assert.strictEqual(res.args.length, 1)
+        assert.ok(res.args[0] === Int)
+        assert.ok(res.ret === Int)
+
+        res = typecheck('fun print_int_twice(x: Int): Unit { print_int(x); print_int(x); }')
+        assert.ok(res instanceof FunType)
+        assert.strictEqual(res.args.length, 1)
+        assert.ok(res.args[0] === Int)
+        assert.ok(res.ret === Unit)
     })
 })
