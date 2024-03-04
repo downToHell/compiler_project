@@ -87,13 +87,13 @@ function AssemblyGenerator(context){
             return
         }
 
-        const format_value = (value) => {
+        const formatValue = (value) => {
             if (isNumber(value)){
                 return `\$${value}`
             }
             return value
         }
-        emit(`${makeIndentation()}${mnemonic} ${args.map(f => format_value(f)).join(', ')}`)
+        emit(`${makeIndentation()}${mnemonic} ${args.map(f => formatValue(f)).join(', ')}`)
     }
     const emitLabel = function(name, omitPrefix){
         if (level > 0) {

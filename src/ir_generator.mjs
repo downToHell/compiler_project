@@ -183,20 +183,20 @@ function IRGenerator(_env){
         if (node.elsz) _else = newLabel()
         const _end = newLabel()
 
-        const var_cond = visit(node.cond)
-        emit(new ir.CondJump(var_cond, _then, _else || _end))
+        const varCond = visit(node.cond)
+        emit(new ir.CondJump(varCond, _then, _else || _end))
 
         emit(_then)
-        const then_res = visit(node.body)
+        const thenRes = visit(node.body)
         emit(new ir.Jump(_end))
         
         if (node.elsz){
             emit(_else)
-            const else_res = visit(node.elsz)
-            emit(new ir.Copy(else_res, then_res))
+            const elseRes = visit(node.elsz)
+            emit(new ir.Copy(elseRes, thenRes))
         }
         emit(_end)
-        return then_res
+        return thenRes
     }
     this.visitWhileExpr = function(node){
         const begin = newLabel()
@@ -204,15 +204,15 @@ function IRGenerator(_env){
         const end = newLabel()
 
         emit(begin)
-        const var_cond = visit(node.cond)
-        emit(new ir.CondJump(var_cond, body, end))
+        const varCond = visit(node.cond)
+        emit(new ir.CondJump(varCond, body, end))
 
         emit(body)
-        const body_res = visit(node.body)
+        const bodyRes = visit(node.body)
         emit(new ir.Jump(begin))
 
         emit(end)
-        return body_res
+        return bodyRes
     }
     this.visitBlock = function(node){
         ctx.beginScope()

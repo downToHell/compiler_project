@@ -25,19 +25,19 @@ export function Assembler(){
             if (as === 'rasm'){
                 stdout = execFileSync('./rasm.sh', [`-q${run ? 'r': ''}o`, out, src, stdlib], { shell: true })
             } else {
-                const src_obj = `${tmpname}.o`
-                const stdlib_obj = `${filename(stdlib)}.o`
+                const srcObj = `${tmpname}.o`
+                const stdlibObj = `${filename(stdlib)}.o`
 
-                execFileSync(as, ['-g', '-o', src_obj, src])
-                execFileSync(as, ['-g', '-o', stdlib_obj, stdlib])
-                execFileSync('ld', ['-o', out, '-static', src_obj, stdlib_obj])
+                execFileSync(as, ['-g', '-o', srcObj, src])
+                execFileSync(as, ['-g', '-o', stdlibObj, stdlib])
+                execFileSync('ld', ['-o', out, '-static', srcObj, stdlibObj])
 
                 if (run){
                     stdout = execFileSync(`./${out}`, { shell: true })
                     fs.rmSync(out)
                 }
-                fs.rmSync(src_obj)
-                fs.rmSync(stdlib_obj)
+                fs.rmSync(srcObj)
+                fs.rmSync(stdlibObj)
             }
             return stdout ? stdout.toString() : ''
         } finally {

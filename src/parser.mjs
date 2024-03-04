@@ -1,78 +1,78 @@
+import * as ast from './ast.mjs'
 import { Token, TokenType } from './tokenizer.mjs'
-import { 
-    Assignment,
-    BinaryExpr,
-    Block,
-    Call,
-    FunDecl,
-    Grouping,
-    Identifier,
-    IfExpr,
-    Literal,
-    LogicalExpr,
-    Module,
-    TypeExpr,
-    UnaryExpr,
-    VarDecl,
-    WhileExpr
-} from './ast.mjs'
 import { SourceLocation } from './source_context.mjs'
 
-function Parser(tokens){
+function ParserContext(tokens){
     let pos = 0
-    let left_precedence_ops = [
-        { types: [TokenType.OR], produces: LogicalExpr },
-        { types: [TokenType.AND], produces: LogicalExpr },
-        { types: [TokenType.EQ_EQ, TokenType.NE], produces: LogicalExpr },
-        { types: [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE], produces: LogicalExpr },
-        { types: [TokenType.PLUS, TokenType.MINUS], produces: BinaryExpr },
-        { types: [TokenType.MUL, TokenType.DIV, TokenType.MOD], produces: BinaryExpr },
-        { types: [TokenType.POW], produces: BinaryExpr }
-    ]
 
     const EOF = () => {
         const loc = tokens.length > 0 ? tokens[tokens.length - 1].loc : new SourceLocation(0, 0)
         return new Token('', TokenType.END, loc)
     }
-    const peek = () => {
+    this.peek = () => {
         if (pos < tokens.length){
             return tokens[pos]
         }
         return EOF()
     }
-    const advance = () => {
-        const token = peek()
+    this.prev = () => {
+        if (pos > 0){
+            return tokens[pos - 1]
+        }
+        return EOF()
+    }
+    this.advance = () => {
+        const token = this.peek()
         if (pos < tokens.length) pos++
         return token
     }
-    const match = (...types) => {
+    this.match = (...types) => {
         for (const type of types){
-            if (peek().type === type){
+            if (this.peek().type === type){
                 return true
             }
         }
         return false
     }
-    const consume = (type) => {
-        if (match(type)){
-            advance()
+    this.consume = (type) => {
+        if (this.match(type)){
+            this.advance()
             return true
         }
         return false
     }
-    const expect = (type, err) => {
-        if (match(type)){
-            return advance()
+    this.expect = (type, err) => {
+        if (this.match(type)){
+            return this.advance()
         }
-        throw new Error(`${peek().loc}: ${err}`)
+        throw new Error(`${this.peek().loc}: ${err}`)
     }
-    const isBlock = (expr) => {
-        if (expr instanceof IfExpr) {
-            if (expr.elsz) return expr.elsz instanceof Block
-            return expr.body instanceof Block
+    this.isBlock = (expr) => {
+        if (expr instanceof ast.IfExpr) {
+            if (expr.elsz) return expr.elsz instanceof ast.Block
+            return expr.body instanceof ast.Block
         }
-        return expr instanceof Block
+        return expr instanceof ast.Block
     }
+}
+
+function Parser(tokens){
+    const leftPrecedenceOps = [
+        { types: [TokenType.OR], produces: ast.LogicalExpr },
+        { types: [TokenType.AND], produces: ast.LogicalExpr },
+        { types: [TokenType.EQ_EQ, TokenType.NE], produces: ast.LogicalExpr },
+        { types: [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE], produces: ast.LogicalExpr },
+        { types: [TokenType.PLUS, TokenType.MINUS], produces: ast.BinaryExpr },
+        { types: [TokenType.MUL, TokenType.DIV, TokenType.MOD], produces: ast.BinaryExpr },
+        { types: [TokenType.POW], produces: ast.BinaryExpr }
+    ]
+    const ctx = new ParserContext(tokens)
+
+    const { 
+        peek, prev, advance,
+        match, consume, expect,
+        isBlock
+    } = ctx
 
     this.parse = function(){
         return this.parseModule(peek().loc)
@@ -84,7 +84,7 @@ function Parser(tokens){
             exprs.push(this.parseExpression(peek().loc))
         } while (consume(TokenType.SEMICOLON) && peek().type != TokenType.END)
         expect(TokenType.END, `EOF expected, got ${peek().type}`)
-        return new Module(exprs, loc)
+        return new ast.Module(exprs, loc)
     }
     this.parseExpression = function(loc){
         return this.parseAssignment(loc)
@@ -100,13 +100,13 @@ function Parser(tokens){
         if (consume(TokenType.ELSE)){
             elsz = this.parseExpression(peek().loc)
         }
-        return new IfExpr(cond, body, elsz, loc)
+        return new ast.IfExpr(cond, body, elsz, loc)
     }
     this.parseArgument = function(loc){
         const ident = this.parseIdentifier(peek().loc)
         expect(TokenType.COLON, `Expected ${TokenType.COLON}, got ${peek().type}`)
         const type = this.parseIdentifier(peek().loc)
-        return new TypeExpr(type, ident, loc)
+        return new ast.TypeExpr(type, ident, loc)
     }
     this.parseArgumentList = function(){
         expect(TokenType.LPAREN, `Expected ${TokenType.LPAREN}, got ${peek().type}`)
@@ -135,7 +135,7 @@ function Parser(tokens){
         } else {
             throw new Error(`${loc}: Expected ${[TokenType.LBRACE, TokenType.EQ].join(', ')}, got ${peek().type}`)
         }
-        return new FunDecl(ident, args, retType, body, loc)
+        return new ast.FunDecl(ident, args, retType, body, loc)
     }
     this.parseVarDeclaration = function(loc){
         expect(TokenType.VAR, `Expected ${TokenType.VAR}, got ${peek().type}`)
@@ -148,14 +148,14 @@ function Parser(tokens){
         expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
         const initializer = this.parseExpression(peek().loc)
 
-        return new VarDecl(ident, type ? new TypeExpr(type, initializer, loc) : initializer, loc)
+        return new ast.VarDecl(ident, type ? new ast.TypeExpr(type, initializer, loc) : initializer, loc)
     }
     this.parseWhileExpression = function(loc){
         expect(TokenType.WHILE, `Expected ${TokenType.WHILE}, got ${peek().type}`)
         const cond = this.parseLeftPrecedenceExpr(peek().loc)
         expect(TokenType.DO, `Expected ${TokenType.DO}, got ${peek().type}`)
         const body = this.parseExpression(peek().loc)
-        return new WhileExpr(cond, body, loc)
+        return new ast.WhileExpr(cond, body, loc)
     }
     this.parseBlockExpression = function(loc){
         expect(TokenType.LBRACE, `Expected ${TokenType.LBRACE}, got ${peek().type}`)
@@ -171,11 +171,11 @@ function Parser(tokens){
             }
         }
 
-        if (tokens[pos - 1].type === TokenType.SEMICOLON){
-            exprs.push(new Literal(null, tokens[pos - 1].loc))
+        if (prev().type === TokenType.SEMICOLON){
+            exprs.push(new ast.Literal(null, prev().loc))
         }
         expect(TokenType.RBRACE, `Missing ${TokenType.RBRACE} at ${peek().type}`)
-        return new Block(exprs, loc)
+        return new ast.Block(exprs, loc)
     }
     this.parseAssignment = function(loc){
         const expr = this.parseLeftPrecedenceExpr(peek().loc)
@@ -183,25 +183,25 @@ function Parser(tokens){
         if (consume(TokenType.EQ)){
             const value = this.parseExpression(peek().loc)
 
-            if (expr instanceof Identifier){
-                return new Assignment(expr, value, loc)
+            if (expr instanceof ast.Identifier){
+                return new ast.Assignment(expr, value, loc)
             }
             throw new Error(`${loc}: Invalid assignment target!`)
         }
         return expr
     }
     this.parseLeftPrecedenceExpr = function(loc){
-        return this.__parseLeftPrecedenceExpr(0, left_precedence_ops, loc)
+        return this.__parseLeftPrecedenceExpr(0, leftPrecedenceOps, loc)
     }
-    this.__parseLeftPrecedenceExpr = function(current_level, more, loc){
-        const next_level = current_level + 1
-        let left = next_level < more.length ? this.__parseLeftPrecedenceExpr(next_level, more, peek().loc) : this.parseUnaryExpression(peek().loc)
+    this.__parseLeftPrecedenceExpr = function(currentLevel, more, loc){
+        const nextLevel = currentLevel + 1
+        let left = nextLevel < more.length ? this.__parseLeftPrecedenceExpr(nextLevel, more, peek().loc) : this.parseUnaryExpression(peek().loc)
 
-        while (match(...more[current_level].types)){
+        while (match(...more[currentLevel].types)){
             const op = advance()
-            const right = next_level < more.length ? this.__parseLeftPrecedenceExpr(next_level, more, peek().loc) : this.parseUnaryExpression(peek().loc)
+            const right = nextLevel < more.length ? this.__parseLeftPrecedenceExpr(nextLevel, more, peek().loc) : this.parseUnaryExpression(peek().loc)
 
-            left = new more[current_level].produces(left, op.value, right, loc)
+            left = new more[currentLevel].produces(left, op.value, right, loc)
         }
         return left
     }
@@ -209,7 +209,7 @@ function Parser(tokens){
         if (match(TokenType.MINUS, TokenType.NOT)){
             const op = advance()
             const right = this.parseUnaryExpression(peek().loc)
-            return new UnaryExpr(right, op.value, loc)
+            return new ast.UnaryExpr(right, op.value, loc)
         }
         return this.parseFunctionCall(loc)
     }
@@ -227,7 +227,7 @@ function Parser(tokens){
                 }
             }
             expect(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
-            return new Call(expr, args, loc)
+            return new ast.Call(expr, args, loc)
         }
         return expr
     }
@@ -248,24 +248,24 @@ function Parser(tokens){
         expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)
         const expr = this.parseExpression(peek().loc)
         expect(TokenType.RPAREN, `Expected ")" got ${peek().type}`)
-        return new Grouping(expr, loc)
+        return new ast.Grouping(expr, loc)
     }
 
     this.parseIdentifier = function(loc){
         const token = expect(TokenType.IDENTIFIER, `Expected identifier, got ${peek().type}`)
-        return new Identifier(token.value, loc)
+        return new ast.Identifier(token.value, loc)
     }
     this.parseIntLiteral = function(loc){
         const token = expect(TokenType.INT_LITERAL, `Expected an integer literal, got ${peek().type}`)
-        return new Literal(token.value, loc)
+        return new ast.Literal(token.value, loc)
     }
     this.parseBoolLiteral = function(loc){
         const token = expect(TokenType.BOOL_LITERAL, `Expected a bool literal, got ${peek().type}`)
-        return new Literal(token.value === 'true', loc)
+        return new ast.Literal(token.value === 'true', loc)
     }
     this.parseUnitLiteral = function(loc){
         expect(TokenType.UNIT_LITERAL, `Expected a unit literal, got ${peek().type}`)
-        return new Literal(null, loc)
+        return new ast.Literal(null, loc)
     }
 }
 

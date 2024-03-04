@@ -9,13 +9,13 @@ export function Instruction(){
             .filter(k => this[k] !== undefined && typeof this[k] !== 'function')
     }
     this.toString = () => {
-        const format_value = (v) => {
+        const formatValue = (v) => {
             if (Array.isArray(v)){
-                return `[${v.map(i => format_value(i)).join(', ')}]`
+                return `[${v.map(i => formatValue(i)).join(', ')}]`
             }
             return v.toString()
         }
-        return `${this.constructor.name}(${this.fields().map(f => format_value(this[f])).join(', ')})`
+        return `${this.constructor.name}(${this.fields().map(f => formatValue(this[f])).join(', ')})`
     }
 }
 
