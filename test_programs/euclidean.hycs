@@ -6,6 +6,6 @@ fun gcd(a: Int, b: Int): Int {
     } else {
         gcd(b, a % b)
     }
-};
+}
 print_int(gcd(read_int(), read_int()))
 # assert(7, 6, 27, 21)

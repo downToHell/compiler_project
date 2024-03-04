@@ -47,9 +47,14 @@ function ParserContext(tokens){
         }
         throw new Error(`${this.peek().loc}: ${err}`)
     }
+    this.lookbehind = (type) => {
+        return this.prev().type === type
+    }
     this.isBlock = (expr) => {
         if (expr instanceof ast.IfExpr) {
             if (expr.elsz) return expr.elsz instanceof ast.Block
+            return expr.body instanceof ast.Block
+        } else if (expr instanceof ast.WhileExpr){
             return expr.body instanceof ast.Block
         }
         return expr instanceof ast.Block
@@ -71,7 +76,7 @@ function Parser(tokens){
     const { 
         peek, prev, advance,
         match, consume, expect,
-        isBlock
+        lookbehind, isBlock
     } = ctx
 
     this.parse = function(){
@@ -82,7 +87,7 @@ function Parser(tokens){
 
         do {
             exprs.push(this.parseExpression(peek().loc))
-        } while (consume(TokenType.SEMICOLON) && peek().type != TokenType.END)
+        } while ((consume(TokenType.SEMICOLON) || lookbehind(TokenType.RBRACE)) && peek().type != TokenType.END)
         expect(TokenType.END, `EOF expected, got ${peek().type}`)
         return new ast.Module(exprs, loc)
     }
@@ -164,14 +169,14 @@ function Parser(tokens){
         while (!match(TokenType.RBRACE) && !match(TokenType.END)){
             exprs.push(this.parseExpression(peek().loc))
 
-            if (!match(TokenType.RBRACE) && !isBlock(exprs[exprs.length - 1])){
+            if (!match(TokenType.RBRACE) && !isBlock(exprs.at(-1))){
                 expect(TokenType.SEMICOLON, `Missing ${TokenType.SEMICOLON} at ${peek().type}`)
-            } else if (match(TokenType.SEMICOLON)) {
-                advance()
+            } else {
+                consume(TokenType.SEMICOLON)
             }
         }
 
-        if (prev().type === TokenType.SEMICOLON){
+        if (lookbehind(TokenType.SEMICOLON)){
             exprs.push(new ast.Literal(null, prev().loc))
         }
         expect(TokenType.RBRACE, `Missing ${TokenType.RBRACE} at ${peek().type}`)

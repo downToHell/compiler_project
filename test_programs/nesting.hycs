@@ -9,7 +9,7 @@ if x % 2 == 0 then {
     if x % 2 == 1 then {
         x = x + 2;
     }
-};
+}
 print_int(x)
 # assert([2, 5], 3)
 ---
