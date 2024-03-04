@@ -36,6 +36,8 @@ function TypeChecker(_env){
     env.addIfAbsent(TokenType.UNARY_MINUS, ArithmeticNegation)
     env.addIfAbsent(TokenType.NOT, LogicalNegation)
 
+    const funStack = []
+
     this.typecheck = function(node){
         switch(node.constructor){
             case ast.Literal: return this.typeOfLiteral(node)
@@ -52,7 +54,7 @@ function TypeChecker(_env){
             case ast.VarDecl: return this.typeOfVarDeclaration(node)
             case ast.TypeExpr: return this.typeOfTypeExpr(node)
             case ast.Grouping: return this.typecheck(node.expr)
-            case ast.Module: return node.exprs.map(n => this.typecheck(n))
+            case ast.Module: return this.typeOfModule(node)
             default: throw new Error(`Unknown ast node: ${node.constructor.name}`)
         }
     }
@@ -120,13 +122,14 @@ function TypeChecker(_env){
         const toType = (f) => {
             const type = BasicTypes[f.name]
             if (!type){
-                throw new Error(`Unknown type: ${f.name}`)
+                throw new Error(`${f.loc}: Unknown type: ${f.name}`)
             }
             return type
         }
         const args = node.args.map(f => toType(f.type))
         const fun = new FunType(args, toType(node.retType))
         env.addSymbol(node.ident.name, fun)
+        funStack.push(node)
         return fun
     }
     this.typeOfVarDeclaration = function(node){
@@ -151,6 +154,22 @@ function TypeChecker(_env){
             throw new Error(`${node.loc}: Invalid type expression: expected ${node.type.name}, got ${type}`)
         }
         return type
+    }
+    this.typeOfModule = function(node){
+        const res = node.exprs.map(n => this.typecheck(n))
+        let fun
+
+        while ((fun = funStack.pop())){
+            env = new SymTab(env)
+            fun.args.forEach(f => env.addSymbol(f.expr.name, BasicTypes[f.type.name]))
+            const val = this.typecheck(fun.body)
+
+            if (val.name !== fun.retType.name){
+                throw new Error(`${node.loc}: Invalid return type ${val}, expected ${fun.retType.name} instead`)
+            }
+            env = env.getParent()
+        }
+        return res
     }
 }
 
