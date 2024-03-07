@@ -1,22 +1,7 @@
 import assert from 'node:assert'
-import { Parser } from "../src/parser.mjs"
-import { Tokenizer } from "../src/tokenizer.mjs"
-import {
-    Assignment,
-    BinaryExpr,
-    Block,
-    Call,
-    FunDecl,
-    Grouping,
-    Identifier,
-    IfExpr,
-    Literal,
-    LogicalExpr,
-    TypeExpr,
-    UnaryExpr,
-    VarDecl,
-    WhileExpr
-} from '../src/ast.mjs'
+import { expect } from './tree_tester.mjs'
+import { Parser } from '../src/parser.mjs'
+import { Tokenizer } from '../src/tokenizer.mjs'
 
 const makeParser = (inp) => {
     let scn = new Tokenizer(inp)
@@ -42,158 +27,153 @@ describe('Parser tests', function(){
 
     it('accepts simple addition', function(){
         let parser = makeParser('1 + 3 - 5')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof BinaryExpr)
-        assert.ok(expr.left instanceof BinaryExpr)
-        assert.ok(expr.right instanceof Literal)
-        assert.ok(expr.left.left instanceof Literal)
-        assert.ok(expr.left.right instanceof Literal)
-        assert.strictEqual(expr.left.op, '+')
-        assert.strictEqual(expr.op, '-')
-        assert.strictEqual(expr.left.left.value, 1)
-        assert.strictEqual(expr.left.right.value, 3)
-        assert.strictEqual(expr.right.value, 5)
+        expr.isBinaryExpr()
+            .hasOperator('-')
+            .andLeft(left => {
+                left.isBinaryExpr()
+                    .hasOperator('+')
+                    .andLeft(left => left.isLiteral().hasValue(1))
+                    .andRight(right => right.isLiteral().hasValue(3))
+            })
+            .andRight(right => right.isLiteral().hasValue(5))
     })
 
     it('accepts simple multiplication', function(){
         let parser = makeParser('1 - 2 * 3')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof BinaryExpr)
-        assert.ok(expr.left instanceof Literal)
-        assert.ok(expr.right instanceof BinaryExpr)
-        assert.ok(expr.right.left instanceof Literal)
-        assert.ok(expr.right.right instanceof Literal)
-        assert.strictEqual(expr.op, '-')
-        assert.strictEqual(expr.right.op, '*')
-        assert.strictEqual(expr.left.value, 1)
-        assert.strictEqual(expr.right.left.value, 2)
-        assert.strictEqual(expr.right.right.value, 3)
+        expr.isBinaryExpr()
+            .hasOperator('-')
+            .andLeft(left => left.isLiteral().hasValue(1))
+            .andRight(right => {
+                right.isBinaryExpr()
+                    .hasOperator('*')
+                    .andLeft(left => left.isLiteral().hasValue(2))
+                    .andRight(right => right.isLiteral().hasValue(3))
+            })
     })
 
     it('accepts power expressions', function(){
         let parser = makeParser('1 + 2 * 3 ** 5')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof BinaryExpr)
-        assert.ok(expr.left instanceof Literal)
-        assert.ok(expr.right instanceof BinaryExpr)
-        assert.ok(expr.right.left instanceof Literal)
-        assert.ok(expr.right.right instanceof BinaryExpr)
-        assert.ok(expr.right.right.left instanceof Literal)
-        assert.ok(expr.right.right.right instanceof Literal)
-        assert.strictEqual(expr.op, '+')
-        assert.strictEqual(expr.right.op, '*')
-        assert.strictEqual(expr.right.right.op, '**')
-        assert.strictEqual(expr.left.value, 1)   
-        assert.strictEqual(expr.right.left.value, 2)
-        assert.strictEqual(expr.right.right.left.value, 3)
-        assert.strictEqual(expr.right.right.right.value, 5)
+        expr.isBinaryExpr()
+            .hasOperator('+')
+            .andLeft(left => left.isLiteral().hasValue(1))
+            .andRight(right => {
+                right.isBinaryExpr()
+                    .hasOperator('*')
+                    .andLeft(left => left.isLiteral().hasValue(2))
+                    .andRight(right => {
+                        right.isBinaryExpr()
+                            .hasOperator('**')
+                            .andLeft(left => left.isLiteral().hasValue(3))
+                            .andRight(right => right.isLiteral().hasValue(5))
+                    })
+            })
     })
 
     it('accepts grouped expressions', function(){
         let parser = makeParser('(1 - 2) / 3')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof BinaryExpr)
-        assert.ok(expr.left instanceof Grouping)
-        assert.ok(expr.right instanceof Literal)
-        assert.ok(expr.left.expr instanceof BinaryExpr)
-        assert.ok(expr.left.expr.left instanceof Literal)
-        assert.ok(expr.left.expr.right instanceof Literal)
-        assert.strictEqual(expr.op, '/')
-        assert.strictEqual(expr.left.expr.op, '-')
-        assert.strictEqual(expr.left.expr.left.value, 1)
-        assert.strictEqual(expr.left.expr.right.value, 2)
-        assert.strictEqual(expr.right.value, 3)
+        expr.isBinaryExpr()
+            .hasOperator('/')
+            .andLeft(left => left.isGrouping().andExpr(expr => {
+                expr.isBinaryExpr()
+                    .hasOperator('-')
+                    .andLeft(left => left.isLiteral().hasValue(1))
+                    .andRight(right => right.isLiteral().hasValue(2))
+            }))
+            .andRight(right => right.isLiteral().hasValue(3))
     })
 
     it('accepts negated expressions', function(){
         let parser = makeParser('-5')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof UnaryExpr)
-        assert.ok(expr.right instanceof Literal)
-        assert.strictEqual(expr.op, '-')
-        assert.strictEqual(expr.right.value, 5)
+        expr.isUnaryExpr()
+            .hasOperator('-')
+            .andRight(right => right.isLiteral().hasValue(5))
     })
 
     it('accepts double negation', function(){
         let parser = makeParser('not not 8')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof UnaryExpr)
-        assert.ok(expr.right instanceof UnaryExpr)
-        assert.ok(expr.right.right instanceof Literal)
-        assert.strictEqual(expr.op, 'not')
-        assert.strictEqual(expr.right.op, 'not')
-        assert.strictEqual(expr.right.right.value, 8)
+        expr.isUnaryExpr()
+            .hasOperator('not')
+            .andRight(right => {
+                right.isUnaryExpr()
+                    .hasOperator('not')
+                    .andRight(right => right.isLiteral().hasValue(8))
+            })
     })
 
     it('accepts identifiers in arithmetic op', function(){
         let parser = makeParser('a + b * c')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof BinaryExpr)
-        assert.ok(expr.left instanceof Identifier)
-        assert.ok(expr.right instanceof BinaryExpr)
-        assert.ok(expr.right.left instanceof Identifier)
-        assert.ok(expr.right.right instanceof Identifier)
-        assert.strictEqual(expr.op, '+')
-        assert.strictEqual(expr.right.op, '*')
-        assert.strictEqual(expr.left.name, 'a')
-        assert.strictEqual(expr.right.left.name, 'b')
-        assert.strictEqual(expr.right.right.name, 'c')
+        expr.isBinaryExpr()
+            .hasOperator('+')
+            .andLeft(left => left.isIdentifier().hasName('a'))
+            .andRight(right => {
+                right.isBinaryExpr()
+                    .hasOperator('*')
+                    .andLeft(left => left.isIdentifier().hasName('b'))
+                    .andRight(right => right.isIdentifier().hasName('c'))
+            })
     })
 
     it('accepts logical expressions', function(){
         let parser = makeParser('a or b and c')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof LogicalExpr)
-        assert.ok(expr.left instanceof Identifier)
-        assert.ok(expr.right instanceof LogicalExpr)
-        assert.strictEqual(expr.op, 'or')
-        assert.strictEqual(expr.right.op, 'and')
-        assert.strictEqual(expr.left.name, 'a')
-        assert.strictEqual(expr.right.left.name, 'b')
-        assert.strictEqual(expr.right.right.name, 'c')
+        expr.isLogicalExpr()
+            .hasOperator('or')
+            .andLeft(left => left.isIdentifier().hasName('a'))
+            .andRight(right => {
+                right.isLogicalExpr()
+                    .hasOperator('and')
+                    .andLeft(left => left.isIdentifier().hasName('b'))
+                    .andRight(right => right.isIdentifier().hasName('c'))
+            })
     })
 
     it('accepts comparison', function(){
         let parser = makeParser('a < b and b != c')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof LogicalExpr)
-        assert.ok(expr.left instanceof LogicalExpr)
-        assert.ok(expr.right instanceof LogicalExpr)
-        assert.ok(expr.left.left instanceof Identifier)
-        assert.ok(expr.left.right instanceof Identifier)
-        assert.ok(expr.right.left instanceof Identifier)
-        assert.ok(expr.right.right instanceof Identifier)
-        assert.strictEqual(expr.op, 'and')
-        assert.strictEqual(expr.left.op, '<')
-        assert.strictEqual(expr.right.op, '!=')
-        assert.strictEqual(expr.left.left.name, 'a')
-        assert.strictEqual(expr.left.right.name, 'b')
-        assert.strictEqual(expr.right.left.name, 'b')
-        assert.strictEqual(expr.right.right.name, 'c')
+        expr.isLogicalExpr()
+            .hasOperator('and')
+            .andLeft(left => {
+                left.isLogicalExpr()
+                    .hasOperator('<')
+                    .andLeft(left => left.isIdentifier().hasName('a'))
+                    .andRight(right => right.isIdentifier().hasName('b'))
+            })
+            .andRight(right => {
+                right.isLogicalExpr()
+                    .hasOperator('!=')
+                    .andLeft(left => left.isIdentifier().hasName('b'))
+                    .andRight(right => right.isIdentifier().hasName('c'))
+            })
     })
 
     it('accepts assignment expression', function(){
         let parser = makeParser('x = 3 + 5')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof Assignment)
-        assert.ok(expr.target instanceof Identifier)
-        assert.ok(expr.expr instanceof BinaryExpr)
-        assert.ok(expr.expr.left instanceof Literal)
-        assert.ok(expr.expr.right instanceof Literal)
-        assert.strictEqual(expr.target.name, 'x')
-        assert.strictEqual(expr.expr.op, '+')
-        assert.strictEqual(expr.expr.left.value, 3)
-        assert.strictEqual(expr.expr.right.value, 5)
+        expr.isAssignment()
+            .andTarget(target => target.isIdentifier().hasName('x'))
+            .andExpr(expr => {
+                expr.isBinaryExpr()
+                    .hasOperator('+')
+                    .andLeft(left => left.isLiteral().hasValue(3))
+                    .andRight(right => right.isLiteral().hasValue(5))
+            })
     })
 
     it('rejects invalid assignment', function(){
@@ -203,28 +183,31 @@ describe('Parser tests', function(){
 
     it('accepts if expressions', function(){
         let parser = makeParser('if true then b + c else x * y')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof IfExpr)
-        assert.ok(expr.cond instanceof Literal)
-        assert.ok(expr.body instanceof BinaryExpr)
-        assert.ok(expr.elsz instanceof BinaryExpr)
-        assert.strictEqual(expr.cond.value, true)
-        assert.strictEqual(expr.body.op, '+')
-        assert.strictEqual(expr.body.left.name, 'b')
-        assert.strictEqual(expr.body.right.name, 'c')
-        assert.strictEqual(expr.elsz.op, '*')
-        assert.strictEqual(expr.elsz.left.name, 'x')
-        assert.strictEqual(expr.elsz.right.name, 'y')
+        expr.isIfExpr()
+            .andCond(cond => cond.isLiteral().hasValue(true))
+            .andBody(body => {
+                body.isBinaryExpr()
+                    .hasOperator('+')
+                    .andLeft(left => left.isIdentifier().hasName('b'))
+                    .andRight(right => right.isIdentifier().hasName('c'))
+            })
+            .andElse(elsz => {
+                elsz.isBinaryExpr()
+                    .hasOperator('*')
+                    .andLeft(left => left.isIdentifier().hasName('x'))
+                    .andRight(right => right.isIdentifier().hasName('y'))
+            })
     })
 
     it('treats else as optional', function(){
         let parser = makeParser('if a then a + 5')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof IfExpr)
-        assert.ok(expr.cond instanceof Identifier)
-        assert.strictEqual(expr.elsz, undefined)
+        expr.isIfExpr()
+            .andCond(cond => cond.isIdentifier().hasName('a'))
+            .andElse(elsz => elsz.isUndefined())
     })
 
     it('treats everything as an expression', function(){
@@ -239,40 +222,43 @@ describe('Parser tests', function(){
 
     it('accepts function calls', function(){
         let parser = makeParser('f(x, y + z)')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
         
-        assert.ok(expr instanceof Call)
-        assert.strictEqual(expr.target.name, 'f')
-        assert.strictEqual(expr.args.length, 2)
+        expr.isCall()
+            .andTarget(target => target.isIdentifier().hasName('f'))
+            .andArgAt(1, arg => arg.isBinaryExpr())
     })
 
     it('accepts variable declaration', function(){
         let parser = makeParser('var x = 123 + 4')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof VarDecl)
-        assert.ok(expr.ident instanceof Identifier)
-        assert.ok(expr.initializer instanceof BinaryExpr)
+        expr.isVarDecl()
+            .andIdent(ident => ident.isIdentifier().hasName('x'))
+            .andInitializer(init => init.isBinaryExpr())
     })
 
     it('accepts typed variable', function(){
         let parser = makeParser('var x: Int = true')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof VarDecl)
-        assert.ok(expr.ident instanceof Identifier)
-        assert.ok(expr.initializer instanceof TypeExpr)
-        assert.ok(expr.initializer.type instanceof Identifier)
-        assert.ok(expr.initializer.expr instanceof Literal)
+        expr.isVarDecl()
+            .andIdent(ident => ident.isIdentifier().hasName('x'))
+            .andInitializer(init => {
+                init.isTypeExpr()
+                    .andType(type => type.isIdentifier().hasName('Int'))
+                    .andExpr(expr => expr.isLiteral().hasValue(true))
+            })
     })
 
     it('treats declaration as expression', function(){
         let parser = makeParser('(var x = 123) + 7')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof BinaryExpr)
-        assert.ok(expr.left instanceof Grouping)
-        assert.ok(expr.left.expr instanceof VarDecl)
+        expr.isBinaryExpr()
+            .hasOperator('+')
+            .andLeft(left => left.isGrouping())
+            .andRight(right => right.isLiteral())
     })
 
     it('rejects declaration without initializer', function(){
@@ -292,20 +278,18 @@ describe('Parser tests', function(){
 
     it('accepts simple block', function(){
         let parser = makeParser('{ f(a); x = y; f(x) }')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof Block)
-        assert.strictEqual(expr.exprs.length, 3)
+        expr.isBlock()
+            .andExprAt(2, expr => expr.isCall())
     })
 
     it('accepts optional semicolon after block', function(){
         let parser = makeParser('{ a = b + c; }')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
         
-        assert.ok(expr instanceof Block)
-        assert.ok(expr.exprs[1] instanceof Literal)
-        assert.strictEqual(expr.exprs.length, 2)
-        assert.strictEqual(expr.exprs[1].value, null)
+        expr.isBlock()
+            .andExprAt(1, lit => lit.isLiteral().hasValue(null))
     })
 
     it('accepts complex blocks', function(){
@@ -336,28 +320,25 @@ describe('Parser tests', function(){
 
     it('accepts while loops', function(){
         let parser = makeParser('while true do { x = x + 1; print_int(x) }')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof WhileExpr)
-        assert.ok(expr.cond instanceof Literal)
-        assert.ok(expr.body instanceof Block)
-        assert.strictEqual(expr.body.exprs.length, 2)
+        expr.isWhileExpr()
+            .andCond(cond => cond.isLiteral())
+            .andBody(body => body.isBlock().andExprAt(1, expr => expr.isCall()))
     })
 
     it('accepts simple function declaration', function(){
         let parser = makeParser('fun square(x: Int): Int = x * x')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof FunDecl)
-        assert.ok(expr.ident instanceof Identifier)
-        assert.ok(expr.retType instanceof Identifier)
-        assert.strictEqual(expr.args.length, 1)
-        assert.ok(expr.args[0] instanceof TypeExpr)
-        assert.ok(expr.args[0].expr instanceof Identifier)
-        assert.strictEqual(expr.args[0].expr.name, 'x')
-        assert.strictEqual(expr.args[0].type.name, 'Int')
-        assert.strictEqual(expr.ident.name, 'square')
-        assert.strictEqual(expr.retType.name, 'Int')
+        expr.isFunDecl()
+            .andIdent(ident => ident.isIdentifier().hasName('square'))
+            .andRetType(ret => ret.isIdentifier().hasName('Int'))
+            .andArgAt(0, expr => {
+                expr.isTypeExpr()
+                    .andType(type => type.isIdentifier().hasName('Int'))
+                    .andExpr(expr => expr.isIdentifier().hasName('x'))
+            })
     })
 
     it('accepts no-arg function', function(){
@@ -367,23 +348,21 @@ describe('Parser tests', function(){
 
     it('accepts multi-arg function', function(){
         let parser = makeParser('fun logicalOr(a: Bool, b: Bool): Bool = a or b')
-        let expr = parser.parse().first()
+        let expr = expect(parser.parse().first())
 
-        assert.ok(expr instanceof FunDecl)
-        assert.ok(expr.ident instanceof Identifier)
-        assert.ok(expr.retType instanceof Identifier)
-        assert.strictEqual(expr.args.length, 2)
-        assert.ok(expr.args[0] instanceof TypeExpr)
-        assert.ok(expr.args[1] instanceof TypeExpr)
-        assert.ok(expr.args[0].expr instanceof Identifier)
-        assert.ok(expr.args[1].expr instanceof Identifier)
-        assert.ok(expr.args[0].type instanceof Identifier)
-        assert.ok(expr.args[1].type instanceof Identifier)
-        assert.strictEqual(expr.args[0].expr.name, 'a')
-        assert.strictEqual(expr.args[1].expr.name, 'b')
-        assert.strictEqual(expr.args[0].type.name, 'Bool')
-        assert.strictEqual(expr.args[1].type.name, 'Bool')
-        assert.strictEqual(expr.retType.name, 'Bool')
+        expr.isFunDecl()
+            .andIdent(ident => ident.isIdentifier().hasName('logicalOr'))
+            .andRetType(ret => ret.isIdentifier().hasName('Bool'))
+            .andArgAt(0, expr => {
+                expr.isTypeExpr()
+                    .andType(type => type.isIdentifier().hasName('Bool'))
+                    .andExpr(expr => expr.isIdentifier().hasName('a'))
+            })
+            .andArgAt(1, expr => {
+                expr.isTypeExpr()
+                    .andType(type => type.isIdentifier().hasName('Bool'))
+                    .andExpr(expr => expr.isIdentifier().hasName('b'))
+            })
     })
 
     it('rejects functions without return type', function(){
