@@ -146,7 +146,6 @@ function AssemblyGenerator(context){
                         emitInsn(MOVQ, RBP, RSP)
                         emitInsn(POPQ, RBP)
                         emitInsn(RET)
-                        globals.popFrame()
                         break
                     }
                     case ir.Call: {
@@ -175,6 +174,7 @@ function AssemblyGenerator(context){
                     }
                 }
             }
+            globals.popFrame()
         }
         emit()
         

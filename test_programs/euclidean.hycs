@@ -2,9 +2,9 @@
 # input([35, 14], [48, 18], [81, 27] [1071, 462])
 fun gcd(a: Int, b: Int): Int {
     if b == 0 then {
-        a
+        return a;
     } else {
-        gcd(b, a % b)
+        return gcd(b, a % b);
     }
 }
 print_int(gcd(read_int(), read_int()))

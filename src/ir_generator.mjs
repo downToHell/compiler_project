@@ -33,9 +33,8 @@ function IRContext(_env){
         funStack.push(node.ident.name)
         this.emit(this.newLabel(node.ident.name))
     }
-    this.endFunction = (ret) => {
+    this.endFunction = () => {
         this.endScope()
-        this.emit(new ir.Return(ret))
         funStack.pop()
     }
     this.beginScope = () => env = new SymTab(env)
@@ -44,6 +43,16 @@ function IRContext(_env){
     this.emit = (ins) => {
         const func = funStack.at(-1)
         data[func].ins.push(ins)
+    }
+    this.emitIf = (cond, ins) => {
+        if (cond) {
+            this.emit(ins)
+        }
+    }
+    this.emitIfNot = (cond, ins) => this.emitIf(!cond, ins)
+    this.peek = () => {
+        const func = funStack.at(-1)
+        return data[func].ins.at(-1)
     }
 
     this.join = function(separator){
@@ -63,10 +72,7 @@ function IRContext(_env){
 
 function IRGenerator(_env){
     const ctx = new IRContext(_env)
-
-    const emit = (ins) => ctx.emit(ins)
-    const newVar = (name) => ctx.newVar(name)
-    const newLabel = (name) => ctx.newLabel(name)
+    const { emit, emitIf, emitIfNot, newVar, newLabel } = ctx
 
     const visit = (node) => {
         switch (node.constructor){
@@ -81,6 +87,7 @@ function IRGenerator(_env){
             case ast.TypeExpr:
             case ast.Grouping: return visit(node.expr)
             case ast.FunDecl: return this.visitFunDeclaration(node)
+            case ast.Return: return this.visitReturnExpr(node)
             case ast.VarDecl: return this.visitVarDeclaration(node)
             case ast.Assignment: return this.visitAssignment(node)
             case ast.Call: return this.visitCall(node)
@@ -188,12 +195,12 @@ function IRGenerator(_env){
 
         emit(_then)
         const thenRes = visit(node.body)
-        emit(new ir.Jump(_end))
+        emitIfNot(ctx.peek() instanceof ir.Return, new ir.Jump(_end))
         
         if (node.elsz){
             emit(_else)
             const elseRes = visit(node.elsz)
-            emit(new ir.Copy(elseRes, thenRes))
+            emitIf(thenRes && elseRes, new ir.Copy(elseRes, thenRes))
         }
         emit(_end)
         return thenRes
@@ -226,8 +233,11 @@ function IRGenerator(_env){
     }
     this.visitFunDeclaration = function(node){
         ctx.beginFunction(node)
-        const val = visit(node.body)
-        ctx.endFunction(val)
+        visit(node.body)
+        ctx.endFunction()
+    }
+    this.visitReturnExpr = function(node){
+        emit(new ir.Return(visit(node.value)))
     }
     this.visitVarDeclaration = function(node){
         const _var = newVar()
@@ -248,6 +258,7 @@ function IRGenerator(_env){
     this.visitModule = function(node){
         ctx.beginFunction({ args: [], ident: { name: 'main' }})
         node.exprs.forEach(n => visit(n))
+        emit(new ir.Return())
         ctx.endFunction()
     }
 }

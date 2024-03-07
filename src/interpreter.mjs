@@ -2,6 +2,10 @@ import * as ast from './ast.mjs'
 import { SymTab } from './symtab.mjs'
 import { TokenType } from './tokenizer.mjs'
 
+function Return(value){
+    this.value = value
+}
+
 function Interpreter(_env){
     let env = _env || new SymTab()
     env.addIfAbsent(TokenType.PLUS, (a, b) => a + b)
@@ -32,6 +36,7 @@ function Interpreter(_env){
             case ast.WhileExpr: return this.evaluateWhileExpression(node)
             case ast.Call: return this.evaluateCall(node)
             case ast.FunDecl: return this.evaluateFunDeclaration(node)
+            case ast.Return: return this.evaluateReturnExpression(node)
             case ast.VarDecl: return this.evaluateVarDeclaration(node)
             case ast.Assignment: return this.evaluateAssignment(node)
             case ast.TypeExpr: return this.interpret(node.expr) // TODO: typechecking?
@@ -81,7 +86,15 @@ function Interpreter(_env){
     }
     this.evaluateCall = function(node){
         const fn = env.getSymbol(node.target.name)
-        return fn(...node.args.map(f => this.interpret(f)))
+
+        try {
+            return fn(...node.args.map(f => this.interpret(f)))
+        } catch (e){
+            if (e instanceof Return){
+                return e.value
+            }
+            throw e
+        }
     }
     this.evaluateFunDeclaration = function(node){
         env.addSymbol(node.ident.name, (...args) => {
@@ -98,6 +111,9 @@ function Interpreter(_env){
             return ret
         })
         return null
+    }
+    this.evaluateReturnExpression = function(node){
+        throw new Return(this.interpret(node.value))
     }
     this.evaluateVarDeclaration = function(node){
         const value = this.interpret(node.initializer)

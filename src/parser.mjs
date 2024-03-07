@@ -2,13 +2,28 @@ import * as ast from './ast.mjs'
 import { Token, TokenType } from './tokenizer.mjs'
 import { SourceLocation } from './source_context.mjs'
 
+const LVL_TOP = 0
+const LVL_FUN = 1
+
 function ParserContext(tokens){
+    let level = LVL_TOP
     let pos = 0
 
     const EOF = () => {
         const loc = tokens.length > 0 ? tokens[tokens.length - 1].loc : new SourceLocation(0, 0)
         return new Token('', TokenType.END, loc)
     }
+    const hasReturn = (node) => {
+        if (node === undefined) return true // we don't consider empty nodes
+        switch(node.constructor){
+            case ast.Return: return true
+            case ast.WhileExpr: return hasReturn(node.body)
+            case ast.IfExpr: return hasReturn(node.body) && hasReturn(node.elsz)
+            case ast.Block: return node.exprs.some(e => hasReturn(e))
+            default: return false
+        }
+    }
+
     this.peek = () => {
         if (pos < tokens.length){
             return tokens[pos]
@@ -59,6 +74,18 @@ function ParserContext(tokens){
         }
         return expr instanceof ast.Block
     }
+    this.isTopLevel = () => level === LVL_TOP
+    this.enterLevel = (l) => level = l
+
+    this.checkReturn = (exprs) => {
+        if (exprs.length === 0){
+            const unit = new ast.Literal(null, this.prev().loc)
+            exprs.push(new ast.Return(unit, this.prev().loc))
+        } else if (!hasReturn(exprs.at(-1))) {
+            const last = exprs.pop()
+            exprs.push(new ast.Return(last, last.loc))
+        }
+    }
 }
 
 function Parser(tokens){
@@ -74,9 +101,10 @@ function Parser(tokens){
     const ctx = new ParserContext(tokens)
 
     const { 
-        peek, prev, advance,
-        match, consume, expect,
-        lookbehind, isBlock
+        peek, prev, advance, match,
+        consume, expect, isBlock,
+        lookbehind, checkReturn,
+        enterLevel
     } = ctx
 
     this.parse = function(){
@@ -132,15 +160,30 @@ function Parser(tokens){
         expect(TokenType.COLON, `Expected ${TokenType.COLON}, got ${peek().type}`)
         const retType = this.parseIdentifier(peek().loc)
         let body
+        enterLevel(LVL_FUN)
 
         if (match(TokenType.LBRACE)){
             body = this.parseBlockExpression(peek().loc)
+            checkReturn(body.exprs)
         } else if (consume(TokenType.EQ)) {
-            body = this.parseLeftPrecedenceExpr(peek().loc)
+            body = new ast.Return(this.parseLeftPrecedenceExpr(peek().loc), peek().loc)
         } else {
             throw new Error(`${loc}: Expected ${[TokenType.LBRACE, TokenType.EQ].join(', ')}, got ${peek().type}`)
         }
+        enterLevel(LVL_TOP)
         return new ast.FunDecl(ident, args, retType, body, loc)
+    }
+    this.parseReturnExpression = function(loc){
+        if (ctx.isTopLevel()){
+            throw new Error(`${loc}: Can't return from top-level code`)
+        }
+        expect(TokenType.RETURN, `Expected ${TokenType.RETURN}, got ${peek().type}`)
+        let value = null
+
+        if (!consume(TokenType.SEMICOLON)){
+            value = this.parseExpression(peek().loc)
+        }
+        return new ast.Return(value, loc)
     }
     this.parseVarDeclaration = function(loc){
         expect(TokenType.VAR, `Expected ${TokenType.VAR}, got ${peek().type}`)
@@ -239,6 +282,7 @@ function Parser(tokens){
     this.parseFactor = function(loc){
         if (match(TokenType.IF)) return this.parseIfExpression(loc)
         if (match(TokenType.FUN)) return this.parseFunDeclaration(loc)
+        if (match(TokenType.RETURN)) return this.parseReturnExpression(loc)
         if (match(TokenType.VAR)) return this.parseVarDeclaration(loc)
         if (match(TokenType.WHILE)) return this.parseWhileExpression(loc)
         if (match(TokenType.LBRACE)) return this.parseBlockExpression(loc)

@@ -37,6 +37,7 @@ const TokenType = Object.freeze({
     UNIT_LITERAL: '<unit>',
     IDENTIFIER: '<ident>',
     FUN: '<fun>',
+    RETURN: '<return>',
     VAR: '<var>',
     END: '<end>'
 })
@@ -47,6 +48,7 @@ const keywords = Object.freeze({
     while: TokenType.WHILE,
     do: TokenType.DO,
     fun: TokenType.FUN,
+    return: TokenType.RETURN,
     var: TokenType.VAR,
     unit: TokenType.UNIT_LITERAL,
     true: TokenType.BOOL_LITERAL,

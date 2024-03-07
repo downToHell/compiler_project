@@ -51,6 +51,7 @@ function TypeChecker(_env){
             case ast.WhileExpr: return this.typeOfWhileExpr(node)
             case ast.Assignment: return this.typeOfAssignment(node)
             case ast.FunDecl: return this.typeOfFunDeclaration(node)
+            case ast.Return: return this.typeOfReturnExpr(node)
             case ast.VarDecl: return this.typeOfVarDeclaration(node)
             case ast.TypeExpr: return this.typeOfTypeExpr(node)
             case ast.Grouping: return this.typecheck(node.expr)
@@ -132,6 +133,15 @@ function TypeChecker(_env){
         funStack.push(node)
         return fun
     }
+    this.typeOfReturnExpr = function(node){
+        const fun = funStack.at(-1)
+        const val = this.typecheck(node.value)
+
+        if (val.name != fun.retType.name){
+            throw new Error(`${node.loc}: Invalid return type ${val}, expected ${fun.retType.name} instead`)
+        }
+        return Unit
+    }
     this.typeOfVarDeclaration = function(node){
         const type = this.typecheck(node.initializer)
         env.addSymbol(node.ident.name, type)
@@ -157,18 +167,14 @@ function TypeChecker(_env){
     }
     this.typeOfModule = function(node){
         const res = node.exprs.map(n => this.typecheck(n))
-        let fun
 
-        while ((fun = funStack.pop())){
+        funStack.forEach(fun => {
             env = new SymTab(env)
             fun.args.forEach(f => env.addSymbol(f.expr.name, BasicTypes[f.type.name]))
-            const val = this.typecheck(fun.body)
-
-            if (val.name !== fun.retType.name){
-                throw new Error(`${node.loc}: Invalid return type ${val}, expected ${fun.retType.name} instead`)
-            }
+            this.typecheck(fun.body)
             env = env.getParent()
-        }
+            funStack.pop()
+        })
         return res
     }
 }

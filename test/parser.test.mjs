@@ -347,11 +347,11 @@ describe('Parser tests', function(){
     })
 
     it('accepts multi-arg function', function(){
-        let parser = makeParser('fun logicalOr(a: Bool, b: Bool): Bool = a or b')
+        let parser = makeParser('fun logical_or(a: Bool, b: Bool): Bool = a or b')
         let expr = expect(parser.parse().first())
 
         expr.isFunDecl()
-            .andIdent(ident => ident.isIdentifier().hasName('logicalOr'))
+            .andIdent(ident => ident.isIdentifier().hasName('logical_or'))
             .andRetType(ret => ret.isIdentifier().hasName('Bool'))
             .andArgAt(0, expr => {
                 expr.isTypeExpr()
@@ -365,8 +365,68 @@ describe('Parser tests', function(){
             })
     })
 
+    it('accepts return expressions', function(){
+        let parser = makeParser('fun fib(n: Int): Int { if n <= 1 then return n; return fib(n - 2) + fib(n - 1) }')
+        let expr = expect(parser.parse().first())
+
+        expr.isFunDecl()
+            .andIdent(ident => ident.isIdentifier().hasName('fib'))
+            .andRetType(ret => ret.isIdentifier().hasName('Int'))
+            .andArgAt(0, expr => expr.isTypeExpr())
+            .andBody(body => {
+                body.isBlock()
+                    .andExprAt(0, expr => {
+                        expr.isIfExpr()
+                            .andBody(body => body.isReturn().andValue(val => val.isIdentifier()))
+                    })
+                    .andExprAt(1, expr => {
+                        expr.isReturn().andValue(val => val.isBinaryExpr())
+                    })
+            })
+    })
+
+    it('inserts implicit return correctly', function(){
+        let parser = makeParser('fun doTest(x: Int): Int { if x == 0 then { return 2; } 3 }')
+        let expr = expect(parser.parse().first())
+
+        expr.isFunDecl()
+            .andBody(body => {
+                body.isBlock()
+                    .andExprAt(1, expr => {
+                        expr.isReturn().andValue(val => val.isLiteral())
+                    })
+            })
+        parser = makeParser('fun doTest(y: Int): Int { if y == 0 then { return 2; } 3; }');
+        expr = expect(parser.parse().first())
+
+        expr.isFunDecl()
+            .andBody(body => {
+                body.isBlock()
+                    .andExprAt(2, expr => {
+                        expr.isReturn().andValue(val => val.isLiteral().hasValue(null))
+                    })
+            })
+        parser = makeParser('fun odd(x: Int): Bool = if x % 2 == 0 then true else false')
+        expr = expect(parser.parse().first())
+
+        expr.isFunDecl()
+            .andBody(body => {
+                body.isReturn()
+                    .andValue(val => {
+                        val.isIfExpr()
+                            .andBody(body => body.isLiteral().hasValue(true))
+                            .andElse(elsz => elsz.isLiteral().hasValue(false))
+                    })
+            })
+    })
+
+    it('rejects top-level return expressions', function(){
+        let parser = makeParser('return 1')
+        assert.throws(() => parser.parse())
+    })
+
     it('rejects functions without return type', function(){
-        let parser = makeParser('fun noRet() = print_int(1)')
+        let parser = makeParser('fun no_ret() = print_int(1)')
         assert.throws(() => parser.parse())
     })
 
@@ -376,7 +436,7 @@ describe('Parser tests', function(){
     })
 
     it('rejects trailing comma in function declaration', function(){
-        let parser = makeParser('fun invalidArgs(a: Int, b: Int,): Int = a and b')
+        let parser = makeParser('fun invalid_args(a: Int, b: Int,): Int = a and b')
         assert.throws(() => parser.parse())
     })
 })

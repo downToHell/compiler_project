@@ -211,6 +211,20 @@ function CallNode(expr){
     }
 }
 
+function ReturnNode(expr){
+    GuardedTestNode.call(this)
+
+    this.isReturn = function isReturn(){
+        assert.ok(expr instanceof ast.Return)
+        return this.__topLevelCall(this)
+    }
+    this.andValue = (callback) => {
+        this.__check(this.isReturn)
+        callback(new TreeTester(expr.value))
+        return this
+    }
+}
+
 function VarNode(expr){
     GuardedTestNode.call(this)
 
@@ -288,6 +302,7 @@ function TreeTester(expr){
     this.isIfExpr = () => new IfNode(expr).isIfExpr()
     this.isWhileExpr = () => new WhileNode(expr).isWhileExpr()
     this.isCall = () => new CallNode(expr).isCall()
+    this.isReturn = () => new ReturnNode(expr).isReturn()
     this.isVarDecl = () => new VarNode(expr).isVarDecl()
     this.isTypeExpr = () => new TypeNode(expr).isTypeExpr()
     this.isLiteral = () => new LiteralNode(expr).isLiteral()

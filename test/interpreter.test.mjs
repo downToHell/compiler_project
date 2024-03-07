@@ -96,4 +96,9 @@ describe('Interpreter tests', function(){
         const value = interpret('{ fun square(x: Int): Int = x * x; square(4) }')
         assert.strictEqual(value, 16)
     })
+
+    it('evaluates return expressions', function(){
+        const value = interpret('{ fun even(q: Int): Bool { return if q % 2 == 0 then { true } else { false } }; even(5) }')
+        assert.strictEqual(value, false)
+    })
 })

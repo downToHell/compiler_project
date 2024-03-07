@@ -68,7 +68,7 @@ describe('Tokenizer tests', function(){
     })
 
     it('recognizes keywords', function(){
-        const scn = new Tokenizer('if then else while do true false or and fun var', opt)
+        const scn = new Tokenizer('if then else while do true false or and fun return var', opt)
 
         assert.deepStrictEqual(scn.tokens(), [
             makeToken('if', TokenType.IF),
@@ -81,6 +81,7 @@ describe('Tokenizer tests', function(){
             makeToken('or', TokenType.OR),
             makeToken('and', TokenType.AND),
             makeToken('fun', TokenType.FUN),
+            makeToken('return', TokenType.RETURN),
             makeToken('var', TokenType.VAR)
         ])
     })

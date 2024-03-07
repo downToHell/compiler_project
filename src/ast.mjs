@@ -70,6 +70,11 @@ export function FunDecl(ident, args, retType, body, loc){
     this.body = body
 }
 
+export function Return(value, loc){
+    Expression.call(this, loc)
+    this.value = value
+}
+
 export function VarDecl(ident, initializer, loc){
     Expression.call(this, loc)
     this.ident = ident
