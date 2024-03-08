@@ -366,29 +366,25 @@ describe('Parser tests', function(){
     })
 
     it('inserts implicit return correctly', function(){
-        parse('fun doTest(x: Int): Int { if x == 0 then { return 2; } 3 }', expr => {
+        parse('fun noop(): Unit {}', expr => {
+            expect(expr.first())
+                .isFunDecl()
+                .andBody(body => body.isBlock().andExprAt(0, expr => expr.isReturn()))
+        })
+
+        parse('fun sum(a: Int, b: Int): Int = { a + b }', expr => {
             expect(expr.first())
                 .isFunDecl()
                 .andBody(body => {
-                    body.isBlock()
-                        .andExprAt(1, expr => {
-                            expr.isReturn().andValue(val => val.isLiteral())
+                    body.isReturn()
+                        .andValue(val => {
+                            val.isBlock()
+                                .andExprAt(0, expr => expr.isBinaryExpr())
                         })
                 })
         })
         
-        parse('fun doTest(y: Int): Int { if y == 0 then { return 2; } 3; }', expr => {
-            expect(expr.first())
-                .isFunDecl()
-                .andBody(body => {
-                    body.isBlock()
-                        .andExprAt(2, expr => {
-                            expr.isReturn().andValue(val => val.isLiteral().hasValue(null))
-                        })
-                })
-        });
-        
-        parse('fun odd(x: Int): Bool = if x % 2 == 0 then true else false', expr => {
+        parse('fun even(i: Int): Bool = if i % 2 == 0 then true else false', expr => {
             expect(expr.first())
                 .isFunDecl()
                 .andBody(body => {
@@ -397,6 +393,48 @@ describe('Parser tests', function(){
                             val.isIfExpr()
                                 .andBody(body => body.isLiteral().hasValue(true))
                                 .andElse(elsz => elsz.isLiteral().hasValue(false))
+                        })
+                })
+        })
+
+        parse('fun odd(j: Int): Bool = if j % 2 == 0 then { false } else { true }', expr => {
+            expect(expr.first())
+                .isFunDecl()
+                .andBody(body => {
+                    body.isReturn()
+                        .andValue(val => {
+                            val.isIfExpr()
+                                .andBody(body => body.isBlock().andExprAt(0, expr => expr.isLiteral()))
+                                .andElse(elsz => elsz.isBlock().andExprAt(0, expr => expr.isLiteral()))
+                        })
+                })
+        })
+
+        parse('fun even(i: Int): Bool { return if i % 2 == 0 then true else false }', expr => {
+            expect(expr.first())
+                .isFunDecl()
+                .andBody(body => {
+                    body.isBlock()
+                        .andExprAt(0, expr => {
+                            expr.isReturn()
+                                .andValue(val => {
+                                    val.isIfExpr()
+                                        .andBody(body => body.isLiteral().hasValue(true))
+                                        .andElse(elsz => elsz.isLiteral().hasValue(false))
+                                })
+                        })
+                })
+        })
+
+        parse('fun odd(j: Int): Bool { if j % 2 == 0 then { return false } else { return true } }', expr => {
+            expect(expr.first())
+                .isFunDecl()
+                .andBody(body => {
+                    body.isBlock()
+                        .andExprAt(0, expr => {
+                            expr.isIfExpr()
+                                .andBody(body => body.isBlock().andExprAt(0, expr => expr.isReturn()))
+                                .andElse(elsz => elsz.isBlock().andExprAt(0, expr => expr.isReturn()))
                         })
                 })
         })
