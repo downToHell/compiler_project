@@ -114,71 +114,70 @@ function AssemblyGenerator(context){
         emit('.extern pow')
         emit('.section .text')
         emit()
+        context.forEach(fun => this.generateFunction(fun))
+        emit()
+        return asm.join(EOL)
+    }
+    this.generateFunction = function(fun){
+        emitLabel(fun.ins.shift().name, true)
+        emitInsn(PUSHQ, RBP)
+        emitInsn(MOVQ, RSP, RBP)
+        emitInsn(SUBQ, globals.pushFrame(getIRVariables(fun.ins)), RSP)
+        fun.args.forEach((a, i) => emitInsn(MOVQ, intr.argMap[i], globals.getRef(a)))
 
-        for (const fun of context){
-            emitLabel(fun.ins.shift().name, true)
-            emitInsn(PUSHQ, RBP)
-            emitInsn(MOVQ, RSP, RBP)
-            emitInsn(SUBQ, globals.pushFrame(getIRVariables(fun.ins)), RSP)
-            fun.args.forEach((a, i) => emitInsn(MOVQ, intr.argMap[i], globals.getRef(a)))
-
-            for (const ins of fun.ins){
-                if (ins.constructor !== ir.Label) emitComment(ins)
-                
-                switch(ins.constructor){
-                    case ir.Label: emitLabel(ins.name); break
-                    case ir.LoadIntConst: emitInsn(MOVQ, ins.value, globals.getRef(ins.dest)); break
-                    case ir.LoadBoolConst: emitInsn(MOVQ, ins.value ? 1 : 0, globals.getRef(ins.dest)); break
-                    case ir.Copy: {
-                        emitInsn(MOVQ, globals.getRef(ins.source), RAX)
-                        emitInsn(MOVQ, RAX, globals.getRef(ins.dest))
-                        break
-                    }
-                    case ir.Jump: emitInsn(JMP, makeJumpTarget(ins.label.name)); break
-                    case ir.CondJump: {
-                        emitInsn(CMPQ, 0, globals.getRef(ins.cond))
-                        emitInsn(JNE, makeJumpTarget(ins.then.name))
-                        emitInsn(JMP, makeJumpTarget(ins.elsz.name))
-                        break
-                    }
-                    case ir.Return: {
-                        emitInsn(MOVQ, ins.value ? globals.getRef(ins.value) : 0, RAX)
-                        emitInsn(MOVQ, RBP, RSP)
-                        emitInsn(POPQ, RBP)
-                        emitInsn(RET)
-                        break
-                    }
-                    case ir.Call: {
-                        if (intr.allIntrinsics[ins.fun]){
-                            const intrinsic = intr.allIntrinsics[ins.fun]
-                            intrinsic({
-                                refs: ins.args.map(a => globals.getRef(a)),
-                                emit: emitInsn
-                            })
-                        } else {
-                            if (ins.args.length > 6){
-                                throw new Error(`Invalid arity for function '${ins.fun}': args > 6`)
-                            }
-                            ins.args.forEach((arg, i) => emitInsn(MOVQ, globals.getRef(arg), intr.argMap[i]))
-                            emitInsn(CALL, ins.fun)
-
-                            if (ins.args.length > 0 && !intr.builtin.includes(ins.fun)){
-                                emitInsn(ADDQ, ins.args.length * 8, RSP)
-                            }
+        for (const ins of fun.ins){
+            if (ins.constructor !== ir.Label) emitComment(ins)
+            
+            switch(ins.constructor){
+                case ir.Label: emitLabel(ins.name); break
+                case ir.LoadIntConst: emitInsn(MOVQ, ins.value, globals.getRef(ins.dest)); break
+                case ir.LoadBoolConst: emitInsn(MOVQ, ins.value ? 1 : 0, globals.getRef(ins.dest)); break
+                case ir.Copy: {
+                    emitInsn(MOVQ, globals.getRef(ins.source), RAX)
+                    emitInsn(MOVQ, RAX, globals.getRef(ins.dest))
+                    break
+                }
+                case ir.Jump: emitInsn(JMP, makeJumpTarget(ins.label.name)); break
+                case ir.CondJump: {
+                    emitInsn(CMPQ, 0, globals.getRef(ins.cond))
+                    emitInsn(JNE, makeJumpTarget(ins.then.name))
+                    emitInsn(JMP, makeJumpTarget(ins.elsz.name))
+                    break
+                }
+                case ir.Return: {
+                    emitInsn(MOVQ, ins.value ? globals.getRef(ins.value) : 0, RAX)
+                    emitInsn(MOVQ, RBP, RSP)
+                    emitInsn(POPQ, RBP)
+                    emitInsn(RET)
+                    break
+                }
+                case ir.Call: {
+                    if (intr.allIntrinsics[ins.fun]){
+                        const intrinsic = intr.allIntrinsics[ins.fun]
+                        intrinsic({
+                            refs: ins.args.map(a => globals.getRef(a)),
+                            emit: emitInsn
+                        })
+                    } else {
+                        if (ins.args.length > 6){
+                            throw new Error(`Invalid arity for function '${ins.fun}': args > 6`)
                         }
-                        emitInsn(MOVQ, RAX, globals.getRef(ins.dest))
-                        break
+                        ins.args.forEach((arg, i) => emitInsn(MOVQ, globals.getRef(arg), intr.argMap[i]))
+                        emitInsn(CALL, ins.fun)
+
+                        if (ins.args.length > 0 && !intr.builtin.includes(ins.fun)){
+                            emitInsn(ADDQ, ins.args.length * 8, RSP)
+                        }
                     }
-                    default: {
-                        throw new Error(`Unknown instruction: ${ins}`)
-                    }
+                    emitInsn(MOVQ, RAX, globals.getRef(ins.dest))
+                    break
+                }
+                default: {
+                    throw new Error(`Unknown instruction: ${ins}`)
                 }
             }
-            globals.popFrame()
         }
-        emit()
-        
-        return asm.join(EOL)
+        globals.popFrame()
     }
 }
 

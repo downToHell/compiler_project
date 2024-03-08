@@ -63,6 +63,11 @@ function IRContext(_env){
         }
         return res.join(separator)
     }
+    this.forEach = (callback) => {
+        for (const val of this){
+            callback(val)
+        }
+    }
     this[Symbol.iterator] = function *(){
         for (const k of Object.keys(data)){
             yield data[k]
