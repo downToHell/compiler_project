@@ -75,15 +75,11 @@ function Token(value, type, loc){
 }
 
 function Tokenizer(inp, options){
-    let ctx = new SourceContext(inp)
+    const ctx = new SourceContext(inp)
 
     options = options || {}
     const { ignoreLoc } = options
-
-    const isEOF = ctx.isEOF
-    const peek = ctx.peek
-    const consume = ctx.consume
-    const advance = ctx.advance
+    const { isEOF, peek, consume, advance } = ctx
 
     const makeToken = (...options) => {
         let [type, ch, loc] = options

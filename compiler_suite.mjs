@@ -29,9 +29,9 @@ let tcSym = tcSetup()
 let ipSym = ipSetup()
 let genSym = new SymTab()
 
-const parse = (source) => {
-    const scn = new Tokenizer(source)
-    const parser = new Parser(scn.tokens())
+const parse = (source, options) => {
+    const scn = new Tokenizer(source, options)
+    const parser = new Parser(scn.tokens(), options)
     return parser.parse()
 }
 const typecheck = (node, options) => {
@@ -40,13 +40,14 @@ const typecheck = (node, options) => {
     return typechecker.typecheck(node)
 }
 const parseAndCheck = (source, options) => {
-    const module = parse(source)
+    const module = parse(source, options)
     return typecheck(module, { reset: options?.reset }) && module
 }
 const interpret = (source, options) => {
-    if (options?.reset) ipSym = ipSetup()
+    if (options.reset) ipSym = ipSetup()
+    if (options.repl) options.fallthrough = true
     const interpreter = new Interpreter(ipSym)
-    interpreter.interpret(parseAndCheck(source, options)).forEach(r => options?.repl && options.callback(r))
+    interpreter.interpret(parseAndCheck(source, options)).forEach(r => options.repl && options.callback(r))
 }
 const ir = (source, options) => {
     if (options?.reset) genSym = new SymTab()

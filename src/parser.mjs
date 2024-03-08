@@ -88,7 +88,7 @@ function ParserContext(tokens){
     }
 }
 
-function Parser(tokens){
+function Parser(tokens, options){
     const leftPrecedenceOps = [
         { types: [TokenType.OR], produces: ast.LogicalExpr },
         { types: [TokenType.AND], produces: ast.LogicalExpr },
@@ -99,6 +99,9 @@ function Parser(tokens){
         { types: [TokenType.POW], produces: ast.BinaryExpr }
     ]
     const ctx = new ParserContext(tokens)
+
+    options = options || {}
+    const { fallthrough } = options
 
     const { 
         peek, prev, advance, match,
@@ -112,6 +115,10 @@ function Parser(tokens){
     }
     this.parseModule = function(loc){
         let exprs = []
+
+        if (fallthrough && peek().type == TokenType.END){
+            return new ast.Module(exprs, loc)
+        }
 
         do {
             exprs.push(this.parseExpression(peek().loc))
