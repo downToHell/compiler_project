@@ -114,7 +114,7 @@ function Tokenizer(inp, options){
     const skipMultiLineComment = () => {
         let ch, prev
 
-        while (!isEOF() && (ch = peek()) != '/' && prev != '*'){
+        while (!isEOF() && !((ch = peek()) === '/' && prev === '*')){
             prev = ch
             advance()
         }
