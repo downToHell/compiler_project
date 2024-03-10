@@ -52,6 +52,10 @@ ENVIRONMENT VARIABLES:
 
 The compiler comes with an integrated remote assembler in case you don't own a machine that understands x86_64 assembly. The remote assembler is called automatically by the compiler if you set environment variables `RASM_HOST_PATH`, `RASM_HOST_KEY` and `CSCP_ASM`. You can set the first two variables to your preferred remote Linux machine, however, you should set `CSCP_ASM` to `rasm` if you want to use the remote assembler.
 
+- `RASM_HOST_PATH`: the scp path where you want your assembly files to be uploaded and compiled
+- `RASM_HOST_KEY`: the ssh key that is used to access the machine defined by `RASM_HOST_PATH`
+- `CSCP_ASM`: set this to `rasm` if you want to use the remote assembler or unset/set it to `as` to use a local instance
+
 ## Features
 
 So far the compiler implements the following language structures as defined by [HY Compilers](https://hy-compilers.github.io/spring-2024/project/):
