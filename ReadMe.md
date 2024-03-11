@@ -70,6 +70,7 @@ So far the compiler implements the following language structures as defined by [
 - Assignments
 - if-then-else
 - While loops
+- `break` and `continue`
 - Functions
 
 ### Special features
