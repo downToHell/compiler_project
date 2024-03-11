@@ -308,6 +308,37 @@ describe('Parser tests', function(){
         })
     })
 
+    it('accepts control flow statements', function(){
+        parse('while x < 10 do { if x % 2 == 0 then continue; print_int(x) }', expr => {
+            expect(expr.first())
+                .isWhileExpr()
+                .andCond(cond => cond.isLogicalExpr())
+                .andBody(body => {
+                    body.isBlock()
+                        .andExprAt(0, expr => {
+                            expr.isIfExpr().andBody(body => body.isContinue())
+                        })
+                })
+        })
+
+        parse('while true do { if i > 500 then break else print_int(i) }', expr => {
+            expect(expr.first())
+                .isWhileExpr()
+                .andCond(cond => cond.isLiteral())
+                .andBody(body => {
+                    body.isBlock()
+                        .andExprAt(0, expr => {
+                            expr.isIfExpr().andBody(body => body.isBreak())
+                        })
+                })
+        })
+    })
+
+    it('rejects top-level break/continue', function(){
+        assert.throws(() => parse('break'))
+        assert.throws(() => parse('continue'))
+    })
+
     it('accepts simple function declaration', function(){
         parse('fun square(x: Int): Int = x * x', expr => {
             expect(expr.first())

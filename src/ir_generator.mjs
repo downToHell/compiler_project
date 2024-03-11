@@ -3,6 +3,9 @@ import * as ir from './ir.mjs'
 import { SymTab } from './symtab.mjs'
 import { TokenType } from './tokenizer.mjs'
 
+const JMP_TARGET_END = 'end'
+const JMP_TARGET_BEGIN = 'begin'
+
 function IRContext(_env){
     let env = _env || new SymTab()
     const varUnit = new ir.IRVar('unit')
@@ -10,6 +13,7 @@ function IRContext(_env){
 
     let data = {}
     let funStack = []
+    let loopStack = []
     let nextVar = 1
     let nextLabel = 1
 
@@ -39,6 +43,10 @@ function IRContext(_env){
     }
     this.beginScope = () => env = new SymTab(env)
     this.endScope = () => env = env.getParent()
+
+    this.enterLoop = (begin, end) => loopStack.push({ begin, end })
+    this.exitLoop = () => loopStack.pop()
+    this.currentLoop = () => loopStack.at(-1)
     
     this.emit = (ins) => {
         const func = funStack.at(-1)
@@ -88,6 +96,8 @@ function IRGenerator(_env){
             case ast.UnaryExpr: return this.visitUnaryExpr(node)
             case ast.IfExpr: return this.visitIfExpr(node)
             case ast.WhileExpr: return this.visitWhileExpr(node)
+            case ast.Break: return this.visitControlFlow(JMP_TARGET_END)
+            case ast.Continue: return this.visitControlFlow(JMP_TARGET_BEGIN)
             case ast.Block: return this.visitBlock(node)
             case ast.TypeExpr:
             case ast.Grouping: return visit(node.expr)
@@ -215,6 +225,7 @@ function IRGenerator(_env){
         const body = newLabel()
         const end = newLabel()
 
+        ctx.enterLoop(begin, end)
         emit(begin)
         const varCond = visit(node.cond)
         emit(new ir.CondJump(varCond, body, end))
@@ -224,7 +235,16 @@ function IRGenerator(_env){
         emit(new ir.Jump(begin))
 
         emit(end)
+        ctx.exitLoop()
         return bodyRes
+    }
+    this.visitControlFlow = function(flow){
+        if (!ctx.currentLoop()){
+            throw new Error(`Can't ${flow === 'begin' ? 'continue' : 'break'}: no currently active loop`)
+        }
+        const target = ctx.currentLoop()[flow]
+        emit(new ir.Jump(target))
+        return null
     }
     this.visitBlock = function(node){
         ctx.beginScope()

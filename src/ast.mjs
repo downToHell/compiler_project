@@ -56,6 +56,14 @@ export function WhileExpr(cond, body, loc){
     this.body = body
 }
 
+export function Break(loc){
+    Expression.call(this, loc)
+}
+
+export function Continue(loc){
+    Expression.call(this, loc)
+}
+
 export function Call(target, args, loc){
     Expression.call(this, loc)
     this.target = target

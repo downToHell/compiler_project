@@ -88,6 +88,16 @@ describe('Interpreter tests', function(){
         assert.strictEqual(value, 5)
     })
 
+    it('evaluates break expressions', function(){
+        const value = interpret('{ var y = 0; while y < 500 do { y = y + 1; if y > 5 then break; } y }')
+        assert.strictEqual(value, 6)
+    })
+
+    it('evaluates continue expressions', function(){
+        const value = interpret('{ var x = 0; var y = 0; while x < 10 do { if x % 2 == 1 then { x = x + 1; continue; } y = y + x; x = x + 1; } y }')
+        assert.strictEqual(value, 20)
+    })
+
     it('rejects unscoped variable', function(){
         assert.throws(() => interpret('{ var x = 3; { var y = 0; } y }'))
     })

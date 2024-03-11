@@ -1,0 +1,35 @@
+# describe(sum even numbers)
+# input(10)
+var x = 1;
+var y = 0;
+var limit = read_int();
+
+while x < limit do {
+    if x % 2 == 1 then {
+        x = x + 1;
+        continue;
+    }
+    y = y + x;
+    x = x + 1;
+    print_int(y);
+}
+# assert([2, 6, 12, 20])
+---
+# describe(nested break)
+# input(5)
+var x = read_int();
+var y = 0;
+
+while y < x do {
+    var z = 0;
+
+    while true do {
+        z = z + 1;
+        if z == x then {
+            break;
+        }
+    }
+    y = y + 1;
+    print_int(z);
+}
+# assert([5, 5, 5, 5, 5])

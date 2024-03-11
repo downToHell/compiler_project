@@ -2,6 +2,8 @@ import * as ast from './ast.mjs'
 import { SymTab } from './symtab.mjs'
 import { TokenType } from './tokenizer.mjs'
 
+function Break(){}
+function Continue(){}
 function Return(value){
     this.value = value
 }
@@ -34,6 +36,8 @@ function Interpreter(_env){
             case ast.Block: return this.evaluateBlock(node)
             case ast.IfExpr: return this.evaluateIfExpr(node)
             case ast.WhileExpr: return this.evaluateWhileExpression(node)
+            case ast.Break: throw new Break()
+            case ast.Continue: throw new Continue()
             case ast.Call: return this.evaluateCall(node)
             case ast.FunDecl: return this.evaluateFunDeclaration(node)
             case ast.Return: return this.evaluateReturnExpression(node)
@@ -80,7 +84,13 @@ function Interpreter(_env){
     }
     this.evaluateWhileExpression = function(node){
         while (this.interpret(node.cond)){
-            this.interpret(node.body)
+            try {
+                this.interpret(node.body)
+            } catch (e){
+                if (e instanceof Break) break
+                if (e instanceof Continue) continue
+                throw e
+            }
         }
         return null
     }
@@ -90,9 +100,7 @@ function Interpreter(_env){
         try {
             return fn(...node.args.map(f => this.interpret(f)))
         } catch (e){
-            if (e instanceof Return){
-                return e.value
-            }
+            if (e instanceof Return) return e.value
             throw e
         }
     }

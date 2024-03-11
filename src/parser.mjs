@@ -2,8 +2,9 @@ import * as ast from './ast.mjs'
 import { Token, TokenType } from './tokenizer.mjs'
 import { SourceLocation } from './source_context.mjs'
 
-const LVL_TOP = 0
-const LVL_FUN = 1
+const LVL_TOP = 1
+const LVL_LOOP = 2
+const LVL_FUN = 4
 
 function ParserContext(tokens){
     let level = LVL_TOP
@@ -62,6 +63,12 @@ function ParserContext(tokens){
         }
         throw new Error(`${this.peek().loc}: ${err}`)
     }
+    this.expectLoop = (flow) => {
+        if (!this.isLoopLevel()){
+            throw new Error(`${this.peek().loc}: can't ${flow} because there is no active loop`)
+        }
+        this.expect(flow, `Expected ${flow}, got ${this.peek().type}`)
+    }
     this.lookbehind = (type) => {
         return this.prev().type === type
     }
@@ -74,8 +81,14 @@ function ParserContext(tokens){
         }
         return expr instanceof ast.Block
     }
-    this.isTopLevel = () => level === LVL_TOP
-    this.enterLevel = (l) => level = l
+    this.isTopLevel = () => (level & LVL_TOP) === LVL_TOP
+    this.isLoopLevel = () => (level & LVL_LOOP) === LVL_LOOP
+    this.replaceLevel = (l1, l2) => {
+        this.exitLevel(l1)
+        this.enterLevel(l2)
+    }
+    this.enterLevel = (l) => level |= l
+    this.exitLevel = (l) => level &= ~l
 
     this.checkReturn = (exprs) => {
         if (exprs.length === 0){
@@ -107,7 +120,8 @@ function Parser(tokens, options){
         peek, prev, advance, match,
         consume, expect, isBlock,
         lookbehind, checkReturn,
-        enterLevel
+        enterLevel, replaceLevel,
+        exitLevel, expectLoop
     } = ctx
 
     this.parse = function(){
@@ -167,7 +181,7 @@ function Parser(tokens, options){
         expect(TokenType.COLON, `Expected ${TokenType.COLON}, got ${peek().type}`)
         const retType = this.parseIdentifier(peek().loc)
         let body
-        enterLevel(LVL_FUN)
+        replaceLevel(LVL_TOP, LVL_FUN)
 
         if (match(TokenType.LBRACE)){
             body = this.parseBlockExpression(peek().loc)
@@ -177,7 +191,7 @@ function Parser(tokens, options){
         } else {
             throw new Error(`${loc}: Expected ${[TokenType.LBRACE, TokenType.EQ].join(', ')}, got ${peek().type}`)
         }
-        enterLevel(LVL_TOP)
+        replaceLevel(LVL_FUN, LVL_TOP)
         return new ast.FunDecl(ident, args, retType, body, loc)
     }
     this.parseReturnExpression = function(loc){
@@ -209,8 +223,18 @@ function Parser(tokens, options){
         expect(TokenType.WHILE, `Expected ${TokenType.WHILE}, got ${peek().type}`)
         const cond = this.parseLeftPrecedenceExpr(peek().loc)
         expect(TokenType.DO, `Expected ${TokenType.DO}, got ${peek().type}`)
+        enterLevel(LVL_LOOP)
         const body = this.parseExpression(peek().loc)
+        exitLevel(LVL_LOOP)
         return new ast.WhileExpr(cond, body, loc)
+    }
+    this.parseBreak = function(loc){
+        expectLoop(TokenType.BREAK)
+        return new ast.Break(loc)
+    }
+    this.parseContinue = function(loc){
+        expectLoop(TokenType.CONTINUE)
+        return new ast.Continue(loc)
     }
     this.parseBlockExpression = function(loc){
         expect(TokenType.LBRACE, `Expected ${TokenType.LBRACE}, got ${peek().type}`)
@@ -292,13 +316,15 @@ function Parser(tokens, options){
         if (match(TokenType.RETURN)) return this.parseReturnExpression(loc)
         if (match(TokenType.VAR)) return this.parseVarDeclaration(loc)
         if (match(TokenType.WHILE)) return this.parseWhileExpression(loc)
+        if (match(TokenType.BREAK)) return this.parseBreak(loc)
+        if (match(TokenType.CONTINUE)) return this.parseContinue(loc)
         if (match(TokenType.LBRACE)) return this.parseBlockExpression(loc)
         if (match(TokenType.LPAREN)) return this.parseGroup(loc)
         if (match(TokenType.INT_LITERAL)) return this.parseIntLiteral(loc)
         if (match(TokenType.BOOL_LITERAL)) return this.parseBoolLiteral(loc)
         if (match(TokenType.UNIT_LITERAL)) return this.parseUnitLiteral(loc)
         if (match(TokenType.IDENTIFIER)) return this.parseIdentifier(loc)
-        throw new Error(`${loc}: Expected one of ${[TokenType.IF, TokenType.FUN, TokenType.VAR, TokenType.WHILE, TokenType.LBRACE, TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
+        throw new Error(`${loc}: Expected one of ${[TokenType.IF, TokenType.FUN, TokenType.RETURN, TokenType.VAR, TokenType.WHILE, TokenType.LBRACE, TokenType.LPAREN, TokenType.INT_LITERAL, TokenType.BOOL_LITERAL, TokenType.UNIT_LITERAL, TokenType.IDENTIFIER].join(', ')} got ${peek().type} instead`)
     }
     this.parseGroup = function(loc){
         expect(TokenType.LPAREN, `Expected "(" got ${peek().type}`)

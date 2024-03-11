@@ -192,6 +192,24 @@ function WhileNode(expr){
     }
 }
 
+function BreakNode(expr){
+    GuardedTestNode.call(this)
+
+    this.isBreak = function isBreak(){
+        assert.ok(expr instanceof ast.Break)
+        return this.__topLevelCall(this)
+    }
+}
+
+function ContinueNode(expr){
+    GuardedTestNode.call(this)
+
+    this.isContinue = function isContinue(){
+        assert.ok(expr instanceof ast.Continue)
+        return this.__topLevelCall(this)
+    }
+}
+
 function CallNode(expr){
     GuardedTestNode.call(this)
 
@@ -301,6 +319,8 @@ function TreeTester(expr){
     this.isAssignment = () => new AssignmentNode(expr).isAssignment()
     this.isIfExpr = () => new IfNode(expr).isIfExpr()
     this.isWhileExpr = () => new WhileNode(expr).isWhileExpr()
+    this.isBreak = () => new BreakNode(expr).isBreak()
+    this.isContinue = () => new ContinueNode(expr).isContinue()
     this.isCall = () => new CallNode(expr).isCall()
     this.isReturn = () => new ReturnNode(expr).isReturn()
     this.isVarDecl = () => new VarNode(expr).isVarDecl()

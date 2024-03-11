@@ -32,6 +32,8 @@ const TokenType = Object.freeze({
     ELSE: '<else>',
     WHILE: '<while>',
     DO: '<do>',
+    BREAK: '<break>',
+    CONTINUE: '<continue>',
     INT_LITERAL: '<int>',
     BOOL_LITERAL: '<bool>',
     UNIT_LITERAL: '<unit>',
@@ -47,6 +49,8 @@ const keywords = Object.freeze({
     else: TokenType.ELSE,
     while: TokenType.WHILE,
     do: TokenType.DO,
+    break: TokenType.BREAK,
+    continue: TokenType.CONTINUE,
     fun: TokenType.FUN,
     return: TokenType.RETURN,
     var: TokenType.VAR,
@@ -129,7 +133,7 @@ function Tokenizer(inp, options){
         }
         return makeToken(ch)
     }
-    const isKeyword = (str) => keywords[str]
+    const isKeyword = (str) => keywords[str] !== undefined
 
     this.tokens = function(){
         let result = []

@@ -49,6 +49,9 @@ function TypeChecker(_env){
             case ast.Block: return this.typeOfBlock(node)
             case ast.IfExpr: return this.typeOfIfExpr(node)
             case ast.WhileExpr: return this.typeOfWhileExpr(node)
+            case ast.Break:
+            case ast.Continue:
+                return Unit
             case ast.Assignment: return this.typeOfAssignment(node)
             case ast.FunDecl: return this.typeOfFunDeclaration(node)
             case ast.Return: return this.typeOfReturnExpr(node)
