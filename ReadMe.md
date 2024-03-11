@@ -13,6 +13,8 @@ sudo apt-get install -y nodejs
 
 or refer to [NodeSource](https://github.com/nodesource/distributions/blob/master/README.md) for more accurate instructions. Once you've installed NodeJS run: `node -v` and check if it is the right version.
 
+After you successfully installed NodeJS, you need to run `npm install` or `npm i` inside the project's directory to install the necessary dependencies.
+
 ## Structure
 
 ```
