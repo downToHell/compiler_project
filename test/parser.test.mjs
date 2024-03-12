@@ -12,6 +12,12 @@ const parse = (inp, callback) => {
     const res = parser.parse()
     if (callback) callback(res)
 }
+const isLiteral = (value) => {
+    return (lit) => (lit = lit.isLiteral()) && value && lit.hasValue(value)
+}
+const isIdentifier = (name) => {
+    return (ident) => (ident = ident.isIdentifier()) && name && ident.hasName(name)
+}
 
 describe('Parser tests', function(){
 
@@ -35,10 +41,10 @@ describe('Parser tests', function(){
                 .andLeft(left => {
                     left.isBinaryExpr()
                         .hasOperator('+')
-                        .andLeft(left => left.isLiteral().hasValue(1))
-                        .andRight(right => right.isLiteral().hasValue(3))
+                        .andLeft(isLiteral(1))
+                        .andRight(isLiteral(3))
                 })
-                .andRight(right => right.isLiteral().hasValue(5))
+                .andRight(isLiteral(5))
         })
     })
 
@@ -47,12 +53,12 @@ describe('Parser tests', function(){
             expect(expr.first())
                 .isBinaryExpr()
                 .hasOperator('-')
-                .andLeft(left => left.isLiteral().hasValue(1))
+                .andLeft(isLiteral(1))
                 .andRight(right => {
                     right.isBinaryExpr()
                         .hasOperator('*')
-                        .andLeft(left => left.isLiteral().hasValue(2))
-                        .andRight(right => right.isLiteral().hasValue(3))
+                        .andLeft(isLiteral(2))
+                        .andRight(isLiteral(3))
                 })
         })
     })
@@ -62,16 +68,16 @@ describe('Parser tests', function(){
             expect(expr.first())
                 .isBinaryExpr()
                 .hasOperator('+')
-                .andLeft(left => left.isLiteral().hasValue(1))
+                .andLeft(isLiteral(1))
                 .andRight(right => {
                     right.isBinaryExpr()
                         .hasOperator('*')
-                        .andLeft(left => left.isLiteral().hasValue(2))
+                        .andLeft(isLiteral(2))
                         .andRight(right => {
                             right.isBinaryExpr()
                                 .hasOperator('**')
-                                .andLeft(left => left.isLiteral().hasValue(3))
-                                .andRight(right => right.isLiteral().hasValue(5))
+                                .andLeft(isLiteral(3))
+                                .andRight(isLiteral(5))
                         })
                 })
         })
@@ -85,10 +91,10 @@ describe('Parser tests', function(){
                 .andLeft(left => left.isGrouping().andExpr(expr => {
                     expr.isBinaryExpr()
                         .hasOperator('-')
-                        .andLeft(left => left.isLiteral().hasValue(1))
-                        .andRight(right => right.isLiteral().hasValue(2))
+                        .andLeft(isLiteral(1))
+                        .andRight(isLiteral(2))
                 }))
-                .andRight(right => right.isLiteral().hasValue(3))
+                .andRight(isLiteral(3))
         })
     })
 
@@ -97,7 +103,7 @@ describe('Parser tests', function(){
             expect(expr.first())
                 .isUnaryExpr()
                 .hasOperator('-')
-                .andRight(right => right.isLiteral().hasValue(5))
+                .andRight(isLiteral(5))
         })
     })
 
@@ -109,7 +115,7 @@ describe('Parser tests', function(){
                 .andRight(right => {
                     right.isUnaryExpr()
                         .hasOperator('not')
-                        .andRight(right => right.isLiteral().hasValue(8))
+                        .andRight(isLiteral(8))
                 })
         })
     })
@@ -119,12 +125,12 @@ describe('Parser tests', function(){
             expect(expr.first())
                 .isBinaryExpr()
                 .hasOperator('+')
-                .andLeft(left => left.isIdentifier().hasName('a'))
+                .andLeft(isIdentifier('a'))
                 .andRight(right => {
                     right.isBinaryExpr()
                         .hasOperator('*')
-                        .andLeft(left => left.isIdentifier().hasName('b'))
-                        .andRight(right => right.isIdentifier().hasName('c'))
+                        .andLeft(isIdentifier('b'))
+                        .andRight(isIdentifier('c'))
                 })
         })
     })
@@ -134,12 +140,12 @@ describe('Parser tests', function(){
             expect(expr.first())
                 .isLogicalExpr()
                 .hasOperator('or')
-                .andLeft(left => left.isIdentifier().hasName('a'))
+                .andLeft(isIdentifier('a'))
                 .andRight(right => {
                     right.isLogicalExpr()
                         .hasOperator('and')
-                        .andLeft(left => left.isIdentifier().hasName('b'))
-                        .andRight(right => right.isIdentifier().hasName('c'))
+                        .andLeft(isIdentifier('b'))
+                        .andRight(isIdentifier('c'))
                 })
         })
     })
@@ -152,14 +158,14 @@ describe('Parser tests', function(){
                 .andLeft(left => {
                     left.isLogicalExpr()
                         .hasOperator('<')
-                        .andLeft(left => left.isIdentifier().hasName('a'))
-                        .andRight(right => right.isIdentifier().hasName('b'))
+                        .andLeft(isIdentifier('a'))
+                        .andRight(isIdentifier('b'))
                 })
                 .andRight(right => {
                     right.isLogicalExpr()
                         .hasOperator('!=')
-                        .andLeft(left => left.isIdentifier().hasName('b'))
-                        .andRight(right => right.isIdentifier().hasName('c'))
+                        .andLeft(isIdentifier('b'))
+                        .andRight(isIdentifier('c'))
                 })
         })
     })
@@ -168,12 +174,12 @@ describe('Parser tests', function(){
         parse('x = 3 + 5', expr => {
             expect(expr.first())
                 .isAssignment()
-                .andTarget(target => target.isIdentifier().hasName('x'))
+                .andTarget(isIdentifier('x'))
                 .andExpr(expr => {
                     expr.isBinaryExpr()
                         .hasOperator('+')
-                        .andLeft(left => left.isLiteral().hasValue(3))
-                        .andRight(right => right.isLiteral().hasValue(5))
+                        .andLeft(isLiteral(3))
+                        .andRight(isLiteral(5))
                 })
         })
     })
@@ -190,14 +196,14 @@ describe('Parser tests', function(){
                 .andBody(body => {
                     body.isBinaryExpr()
                         .hasOperator('+')
-                        .andLeft(left => left.isIdentifier().hasName('b'))
-                        .andRight(right => right.isIdentifier().hasName('c'))
+                        .andLeft(isIdentifier('b'))
+                        .andRight(isIdentifier('c'))
                 })
                 .andElse(elsz => {
                     elsz.isBinaryExpr()
                         .hasOperator('*')
-                        .andLeft(left => left.isIdentifier().hasName('x'))
-                        .andRight(right => right.isIdentifier().hasName('y'))
+                        .andLeft(isIdentifier('x'))
+                        .andRight(isIdentifier('y'))
                 })
         })
     })
@@ -206,7 +212,7 @@ describe('Parser tests', function(){
         parse('if a then a + 5', expr => {
             expect(expr.first())
                 .isIfExpr()
-                .andCond(cond => cond.isIdentifier().hasName('a'))
+                .andCond(isIdentifier('a'))
                 .andElse(elsz => elsz.isUndefined())
         })
     })
@@ -223,7 +229,7 @@ describe('Parser tests', function(){
         parse('f(x, y + z)', expr => {
             expect(expr.first())
                 .isCall()
-                .andTarget(target => target.isIdentifier().hasName('f'))
+                .andTarget(isIdentifier('f'))
                 .andArgAt(1, arg => arg.isBinaryExpr())
         })
     })
@@ -232,7 +238,7 @@ describe('Parser tests', function(){
         parse('var x = 123 + 4', expr => {
             expect(expr.first())
                 .isVarDecl()
-                .andIdent(ident => ident.isIdentifier().hasName('x'))
+                .andIdent(isIdentifier('x'))
                 .andInitializer(init => init.isBinaryExpr())
         })
     })
@@ -241,11 +247,11 @@ describe('Parser tests', function(){
         parse('var x: Int = true', expr => {
             expect(expr.first())
                 .isVarDecl()
-                .andIdent(ident => ident.isIdentifier().hasName('x'))
+                .andIdent(isIdentifier('x'))
                 .andInitializer(init => {
                     init.isTypeExpr()
-                        .andType(type => type.isIdentifier().hasName('Int'))
-                        .andExpr(expr => expr.isLiteral().hasValue(true))
+                        .andType(isIdentifier('Int'))
+                        .andExpr(isLiteral(true))
                 })
         })
     })
@@ -256,7 +262,7 @@ describe('Parser tests', function(){
                 .isBinaryExpr()
                 .hasOperator('+')
                 .andLeft(left => left.isGrouping())
-                .andRight(right => right.isLiteral())
+                .andRight(isLiteral())
         })
     })
 
@@ -284,7 +290,7 @@ describe('Parser tests', function(){
         parse('{ a = b + c; }', expr => {
             expect(expr.first())
                 .isBlock()
-                .andExprAt(1, lit => lit.isLiteral().hasValue(null))
+                .andExprAt(1, isLiteral(null))
         })
     })
 
@@ -343,12 +349,12 @@ describe('Parser tests', function(){
         parse('fun square(x: Int): Int = x * x', expr => {
             expect(expr.first())
                 .isFunDecl()
-                .andIdent(ident => ident.isIdentifier().hasName('square'))
-                .andRetType(ret => ret.isIdentifier().hasName('Int'))
+                .andIdent(isIdentifier('square'))
+                .andRetType(isIdentifier('Int'))
                 .andArgAt(0, expr => {
                     expr.isTypeExpr()
-                        .andType(type => type.isIdentifier().hasName('Int'))
-                        .andExpr(expr => expr.isIdentifier().hasName('x'))
+                        .andType(isIdentifier('Int'))
+                        .andExpr(isIdentifier('x'))
                 })
         })
     })
@@ -361,17 +367,17 @@ describe('Parser tests', function(){
         parse('fun logical_or(a: Bool, b: Bool): Bool = a or b', expr => {
             expect(expr.first())
                 .isFunDecl()
-                .andIdent(ident => ident.isIdentifier().hasName('logical_or'))
-                .andRetType(ret => ret.isIdentifier().hasName('Bool'))
+                .andIdent(isIdentifier('logical_or'))
+                .andRetType(isIdentifier('Bool'))
                 .andArgAt(0, expr => {
                     expr.isTypeExpr()
-                        .andType(type => type.isIdentifier().hasName('Bool'))
-                        .andExpr(expr => expr.isIdentifier().hasName('a'))
+                        .andType(isIdentifier('Bool'))
+                        .andExpr(isIdentifier('a'))
                 })
                 .andArgAt(1, expr => {
                     expr.isTypeExpr()
-                        .andType(type => type.isIdentifier().hasName('Bool'))
-                        .andExpr(expr => expr.isIdentifier().hasName('b'))
+                        .andType(isIdentifier('Bool'))
+                        .andExpr(isIdentifier('b'))
                 })
         })
     })
@@ -380,14 +386,14 @@ describe('Parser tests', function(){
         parse('fun fib(n: Int): Int { if n <= 1 then return n; return fib(n - 2) + fib(n - 1) }', expr => {
             expect(expr.first())
                 .isFunDecl()
-                .andIdent(ident => ident.isIdentifier().hasName('fib'))
-                .andRetType(ret => ret.isIdentifier().hasName('Int'))
+                .andIdent(isIdentifier('fib'))
+                .andRetType(isIdentifier('Int'))
                 .andArgAt(0, expr => expr.isTypeExpr())
                 .andBody(body => {
                     body.isBlock()
                         .andExprAt(0, expr => {
                             expr.isIfExpr()
-                                .andBody(body => body.isReturn().andValue(val => val.isIdentifier()))
+                                .andBody(body => body.isReturn().andValue(isIdentifier()))
                         })
                         .andExprAt(1, expr => {
                             expr.isReturn().andValue(val => val.isBinaryExpr())
@@ -422,8 +428,8 @@ describe('Parser tests', function(){
                     body.isReturn()
                         .andValue(val => {
                             val.isIfExpr()
-                                .andBody(body => body.isLiteral().hasValue(true))
-                                .andElse(elsz => elsz.isLiteral().hasValue(false))
+                                .andBody(isLiteral(true))
+                                .andElse(isLiteral(false))
                         })
                 })
         })
@@ -435,8 +441,8 @@ describe('Parser tests', function(){
                     body.isReturn()
                         .andValue(val => {
                             val.isIfExpr()
-                                .andBody(body => body.isBlock().andExprAt(0, expr => expr.isLiteral()))
-                                .andElse(elsz => elsz.isBlock().andExprAt(0, expr => expr.isLiteral()))
+                                .andBody(body => body.isBlock().andExprAt(0, isLiteral()))
+                                .andElse(elsz => elsz.isBlock().andExprAt(0, isLiteral()))
                         })
                 })
         })
@@ -450,8 +456,8 @@ describe('Parser tests', function(){
                             expr.isReturn()
                                 .andValue(val => {
                                     val.isIfExpr()
-                                        .andBody(body => body.isLiteral().hasValue(true))
-                                        .andElse(elsz => elsz.isLiteral().hasValue(false))
+                                        .andBody(isLiteral(true))
+                                        .andElse(isLiteral(false))
                                 })
                         })
                 })
