@@ -138,11 +138,8 @@ xorq %r9, %r9
 xorq %rax, %rax
 cmpq $0, %rdi
 je .Ljust_zero
-jge .Lnot_negative
-movq $1, %r9
-negq %rdi                # Handle as positive
-
-.Lnot_negative:
+jge .Ldigit_loop
+incq %r9  # If < 0, set %r9 to 1
 
 .Ldigit_loop:
 cmpq $0, %rdi
@@ -155,7 +152,11 @@ cqto
 idivq %rcx               # Sets rax = quotient and rdx = remainder
 
 movq %rax, %rdi          # The quotient becomes our remaining input
-addl $48, %edx           # ASCII '0' = 48. Add the remainder to get the correct digit.
+cmpq $0, %rdx            # If the remainder is negative (because the input is), negate it
+jge .Lnot_negative
+negq %rdx
+.Lnot_negative:
+addq $48, %rdx           # ASCII '0' = 48. Add the remainder to get the correct digit.
 movb %dl, (%rsp)         # Store the digit in the output
 decq %rsp
 jmp .Ldigit_loop
@@ -239,8 +240,10 @@ false_str_len = . - false_str
 read_int:
 pushq %rbp           # Save previous stack frame pointer
 movq %rsp, %rbp      # Set stack frame pointer
-subq $16, %rsp       # Reserve space for input
-                     # (we only need 1 byte, but getting 16 for alignment)
+pushq %r12           # Back up r12 since it's callee-saved
+pushq $0             # Reserve space for input
+                     # (we only write the lowest byte,
+                     # but loading 64-bits at once is easier)
 
 xorq %r9, %r9        # Clear r9 - it'll store the minus sign
 xorq %r10, %r10      # Clear r10 - it'll accumulate our output
@@ -249,10 +252,6 @@ xorq %r12, %r12      # Clear r12 - it'll count the number of input bytes read.
 
 # Loop until a newline or end of input is encountered
 .Lloop:
-decq %rsi
-cmpq %rsp, %rsi
-je .Lend
-
 # Call syscall 'read'
 xorq %rax, %rax      # syscall number for read = 0
 xorq %rdi, %rdi      # file handle for stdin = 0
@@ -309,6 +308,7 @@ je .Lfinal_negation_done
 neg %r10
 .Lfinal_negation_done:
 # Restore stack registers and return the result
+popq %r12
 movq %rbp, %rsp
 popq %rbp
 movq %r10, %rax
