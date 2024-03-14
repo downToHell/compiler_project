@@ -18,7 +18,7 @@ import {
 } from './types.mjs'
 import { TokenType } from './tokenizer.mjs'
 
-const ARITHMETIC_OPS = [TokenType.PLUS, TokenType.MINUS, TokenType.MUL,
+const ARITHMETIC_OPS = [TokenType.PLUS, TokenType.MINUS, TokenType.STAR,
                         TokenType.DIV, TokenType.MOD, TokenType.POW]
 const EQUALITY_OPS = [TokenType.EQ_EQ, TokenType.NE]
 const LOGICAL_OPS = [TokenType.AND, TokenType.OR]

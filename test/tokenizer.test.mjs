@@ -25,7 +25,7 @@ describe('Tokenizer tests', function(){
             makeToken(3, TokenType.INT_LITERAL),
             makeToken('+', TokenType.PLUS),
             makeToken(5, TokenType.INT_LITERAL),
-            makeToken('*', TokenType.MUL),
+            makeToken('*', TokenType.STAR),
             makeToken(8, TokenType.INT_LITERAL),
             makeToken('%', TokenType.MOD),
             makeToken(2, TokenType.INT_LITERAL),
@@ -57,7 +57,7 @@ describe('Tokenizer tests', function(){
             makeToken('+', TokenType.PLUS),
             makeToken('b', TokenType.IDENTIFIER),
             makeToken(')', TokenType.RPAREN),
-            makeToken('*', TokenType.MUL),
+            makeToken('*', TokenType.STAR),
             makeToken(2, TokenType.INT_LITERAL)
         ]
         assert.deepStrictEqual(tokenize('(a + b) * 2'), expected)

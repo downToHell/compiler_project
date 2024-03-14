@@ -12,7 +12,7 @@ function Interpreter(_env){
     let env = _env || new SymTab()
     env.addIfAbsent(TokenType.PLUS, (a, b) => a + b)
     env.addIfAbsent(TokenType.MINUS, (a, b) => a - b)
-    env.addIfAbsent(TokenType.MUL, (a, b) => a * b)
+    env.addIfAbsent(TokenType.STAR, (a, b) => a * b)
     env.addIfAbsent(TokenType.DIV, (a, b) => parseInt(a / b))
     env.addIfAbsent(TokenType.MOD, (a, b) => a % b)
     env.addIfAbsent(TokenType.POW, (a, b) => Math.pow(a, b))

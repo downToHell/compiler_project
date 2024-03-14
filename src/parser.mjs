@@ -108,7 +108,7 @@ function Parser(tokens, options){
         { types: [TokenType.EQ_EQ, TokenType.NE], produces: ast.LogicalExpr },
         { types: [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE], produces: ast.LogicalExpr },
         { types: [TokenType.PLUS, TokenType.MINUS], produces: ast.BinaryExpr },
-        { types: [TokenType.MUL, TokenType.DIV, TokenType.MOD], produces: ast.BinaryExpr },
+        { types: [TokenType.STAR, TokenType.DIV, TokenType.MOD], produces: ast.BinaryExpr },
         { types: [TokenType.POW], produces: ast.BinaryExpr }
     ]
     const ctx = new ParserContext(tokens)

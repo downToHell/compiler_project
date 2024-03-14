@@ -15,7 +15,7 @@ const TokenType = Object.freeze({
     PLUS: '+',
     MINUS: '-',
     UNARY_MINUS: 'unary_-',
-    MUL: '*',
+    STAR: '*',
     POW: '**',
     DIV: '/',
     MOD: '%',
@@ -128,7 +128,7 @@ function Tokenizer(inp, options){
     const handleDivToken = (ch) => {
         if (consume(TokenType.DIV)){
             return skipSingleLineComment()
-        } else if (consume(TokenType.MUL)){
+        } else if (consume(TokenType.STAR)){
             return skipMultiLineComment()
         }
         return makeToken(ch)
@@ -162,7 +162,7 @@ function Tokenizer(inp, options){
                 return makeToken(ch)
             case TokenType.DIV: return handleDivToken(ch)
             case TokenType.HASHTAG: return skipSingleLineComment()
-            case TokenType.MUL: return consume(TokenType.MUL) ? makeToken(TokenType.POW) : makeToken(ch)
+            case TokenType.STAR: return consume(TokenType.STAR) ? makeToken(TokenType.POW) : makeToken(ch)
             case TokenType.LT: return consume(TokenType.EQ) ? makeToken(TokenType.LE) : makeToken(ch)
             case TokenType.GT: return consume(TokenType.EQ) ? makeToken(TokenType.GE) : makeToken(ch)
             case TokenType.EQ: return consume(TokenType.EQ) ? makeToken(TokenType.EQ_EQ) : makeToken(ch)
