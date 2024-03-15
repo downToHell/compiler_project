@@ -1,3 +1,5 @@
+import { EOL } from 'os'
+
 export function Expression(loc){
     this.loc = loc
 }
@@ -5,11 +7,13 @@ export function Expression(loc){
 export function Literal(value, loc){
     Expression.call(this, loc)
     this.value = value
+    this.toString = () => `${value}`
 }
 
 export function Identifier(name, loc){
     Expression.call(this, loc)
     this.name = name
+    this.toString = () => name
 }
 
 export function BinaryExpr(left, op, right, loc){
@@ -17,6 +21,7 @@ export function BinaryExpr(left, op, right, loc){
     this.left = left
     this.op = op
     this.right = right
+    this.toString = () => `${left} ${op} ${right}`
 }
 
 export function LogicalExpr(left, op, right, loc){
@@ -24,23 +29,27 @@ export function LogicalExpr(left, op, right, loc){
     this.left = left
     this.op = op
     this.right = right
+    this.toString = () => `${left} ${op} ${right}`
 }
 
 export function UnaryExpr(right, op, loc){
     Expression.call(this, loc)
     this.right = right
     this.op = op
+    this.toString = () => `${op}${op === 'not' ? ' ' : ''}${right}`
 }
 
 export function Grouping(expr, loc){
     Expression.call(this, loc)
     this.expr = expr
+    this.toString = () => `(${expr})`
 }
 
 export function Assignment(target, expr, loc){
     Expression.call(this, loc)
     this.target = target
     this.expr = expr
+    this.toString = () => `${target} = ${expr}`
 }
 
 export function IfExpr(cond, body, elsz, loc){
@@ -48,26 +57,31 @@ export function IfExpr(cond, body, elsz, loc){
     this.cond = cond
     this.body = body
     this.elsz = elsz
+    this.toString = () => `if ${cond} then ${body}${elsz !== undefined ? ` else ${elsz}` : ''}`
 }
 
 export function WhileExpr(cond, body, loc){
     Expression.call(this, loc)
     this.cond = cond
     this.body = body
+    this.toString = () => `while ${cond} do ${body}`
 }
 
 export function Break(loc){
     Expression.call(this, loc)
+    this.toString = () => 'break'
 }
 
 export function Continue(loc){
     Expression.call(this, loc)
+    this.toString = () => 'continue'
 }
 
 export function Call(target, args, loc){
     Expression.call(this, loc)
     this.target = target
     this.args = args
+    this.toString = () => `${target}(${args.join(', ')})`
 }
 
 export function FunDecl(ident, args, retType, body, loc){
@@ -76,28 +90,33 @@ export function FunDecl(ident, args, retType, body, loc){
     this.args = args
     this.retType = retType
     this.body = body
+    this.toString = () => `fun ${ident}(${args.join(', ')}): ${retType} ${body}`
 }
 
 export function Return(value, loc){
     Expression.call(this, loc)
     this.value = value
+    this.toString = () => `return ${value}`
 }
 
 export function VarDecl(ident, initializer, loc){
     Expression.call(this, loc)
     this.ident = ident
     this.initializer = initializer
+    this.toString = () => `var ${ident} = ${initializer}`
 }
 
 export function Block(exprs, loc){
     Expression.call(this, loc)
     this.exprs = exprs
+    this.toString = () => `{${exprs.join('; ')}}`
 }
 
 export function TypeExpr(type, expr, loc){
     Expression.call(this, loc)
     this.type = type
     this.expr = expr
+    this.toString = () => `${expr}: ${type}`
 }
 
 export function Module(exprs, loc){
@@ -111,4 +130,5 @@ export function Module(exprs, loc){
         return exprs[0]
     }
     this.each = (callback) => callback(exprs)
+    this.toString = () => `${exprs.join(EOL)}`
 }
