@@ -238,11 +238,11 @@ function IRGenerator(_env){
         ctx.exitLoop()
         return bodyRes
     }
-    this.visitControlFlow = function(flow){
+    this.visitControlFlow = function(label){
         if (!ctx.currentLoop()){
-            throw new Error(`Can't ${flow === 'begin' ? 'continue' : 'break'}: no currently active loop`)
+            throw new Error(`Can't ${label === 'begin' ? 'continue' : 'break'}: no currently active loop`)
         }
-        const target = ctx.currentLoop()[flow]
+        const target = ctx.currentLoop()[label]
         emit(new ir.Jump(target))
         return null
     }

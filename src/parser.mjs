@@ -63,11 +63,11 @@ function ParserContext(tokens){
         }
         throw new Error(`${this.peek().loc}: ${err}`)
     }
-    this.expectLoop = (flow) => {
+    this.expectLoop = (type) => {
         if (!this.isLoopLevel()){
-            throw new Error(`${this.peek().loc}: can't ${flow === TokenType.BREAK ? 'break' : 'continue'} because there is no active loop`)
+            throw new Error(`${this.peek().loc}: can't ${type === TokenType.BREAK ? 'break' : 'continue'} because there is no active loop`)
         }
-        this.expect(flow, `Expected ${flow}, got ${this.peek().type}`)
+        this.expect(type, `Expected ${type}, got ${this.peek().type}`)
     }
     this.lookbehind = (type) => {
         return this.prev().type === type

@@ -1,22 +1,9 @@
 import * as ast from './ast.mjs'
+import * as type from './types.mjs'
 import { SymTab } from './symtab.mjs'
-import { 
-    ArithmeticNegation,
-    ArithmeticOp,
-    BasicTypes,
-    Bool,
-    ComparisonOp,
-    EqualityOp,
-    FunType,
-    Int,
-    LogicalNegation,
-    LogicalOp,
-    PrintBoolFn,
-    PrintIntFn,
-    ReadIntFn,
-    Unit
-} from './types.mjs'
 import { TokenType } from './tokenizer.mjs'
+
+const { Int, Bool, Unit, BasicTypes, FunType } = type
 
 const ARITHMETIC_OPS = [TokenType.PLUS, TokenType.MINUS, TokenType.STAR,
                         TokenType.DIV, TokenType.MOD, TokenType.POW]
@@ -26,15 +13,15 @@ const COMPARISON_OPS = [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE]
 
 function TypeChecker(_env){
     let env = _env || new SymTab()
-    env.addIfAbsent(ARITHMETIC_OPS, ArithmeticOp)
-    env.addIfAbsent(EQUALITY_OPS, EqualityOp)
-    env.addIfAbsent(LOGICAL_OPS, LogicalOp)
-    env.addIfAbsent(COMPARISON_OPS, ComparisonOp)
-    env.addIfAbsent('print_int', PrintIntFn)
-    env.addIfAbsent('print_bool', PrintBoolFn)
-    env.addIfAbsent('read_int', ReadIntFn)
-    env.addIfAbsent(TokenType.UNARY_MINUS, ArithmeticNegation)
-    env.addIfAbsent(TokenType.NOT, LogicalNegation)
+    env.addIfAbsent(ARITHMETIC_OPS, type.ArithmeticOp)
+    env.addIfAbsent(EQUALITY_OPS, type.EqualityOp)
+    env.addIfAbsent(LOGICAL_OPS, type.LogicalOp)
+    env.addIfAbsent(COMPARISON_OPS, type.ComparisonOp)
+    env.addIfAbsent('print_int', type.PrintIntFn)
+    env.addIfAbsent('print_bool', type.PrintBoolFn)
+    env.addIfAbsent('read_int', type.ReadIntFn)
+    env.addIfAbsent(TokenType.UNARY_MINUS, type.ArithmeticNegation)
+    env.addIfAbsent(TokenType.NOT, type.LogicalNegation)
 
     const funStack = []
 
