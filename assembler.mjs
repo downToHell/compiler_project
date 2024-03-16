@@ -74,9 +74,10 @@ syscall
 pow:
 movq %rdi, %r10           # copy base to r10
 movq %rsi, %r11           # copy exponent to r11
-cmpq $0, %r11             # check if exponent is negative
-jl .Lpow_neg_exp_err
 movq $1, %rax             # initialize result register (%rax) with 1
+cmpq $0, %r11             # check if exponent is negative or zero
+je .Lpow_zero
+jl .Lpow_neg_exp_err
 
 .Lpow_loop:
 imulq %r10, %rax
@@ -84,6 +85,19 @@ decq %r11                 # decrement the exponent
 cmpq $0, %r11             # check if exponent is zero
 jne .Lpow_loop            # if it is not, it means we still have to multiply
 ret
+
+.Lpow_zero:
+cmpq $0, %r10             # check if base is zero too
+je .Lpow_zero_base_err
+ret                       # if it is not, return as %rax is already set to 1
+
+.Lpow_zero_base_err:
+movq $1, %rax
+movq $2, %rdi
+movq $pow_base_error_str, %rsi
+movq $pow_base_error_str_len, %rdx
+syscall
+jmp .Lexit
 
 .Lpow_neg_exp_err:
 movq $1, %rax
@@ -334,4 +348,7 @@ read_int_error_str_len = . - read_int_error_str
 pow_neg_error_str:
 .ascii "Error: pow() does not support negative exponents\\n"
 pow_neg_error_str_len = . - pow_neg_error_str
+pow_base_error_str:
+.ascii "Error: pow() of 0 ** 0 is undefined\\n"
+pow_base_error_str_len = . - pow_base_error_str
 `
