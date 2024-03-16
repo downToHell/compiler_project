@@ -96,6 +96,7 @@ There are some special features in my language implementation that are not menti
 - The short-hand syntax for functions inserts an implicit return right after the `=`-sign and parses anything but top-level blocks. So `fun square(x: Int): Int = { return x * x }` would be considered illegal and hence would not compile.
 - Return has been implemented as such that on a missing return expression at the end of a block it is automatically inserted by the parser at compile-time.
 - Accessing globals from a function is undefined behaviour: `var x = 3; fun print_x(): Unit { print_int(x) }`
+- Combinations of unary-`*` and `&` are not allowed, so this `&*p` cannot be used. The only legal semantic unit to follow an `&` is an identifier
 
 ## End-to-End Test Framework
 
