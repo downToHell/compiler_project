@@ -83,11 +83,11 @@ export const parse = (src) => {
         expect(')')
         return [[TEST_FAILED]]
     }
-    const assertOrFail = (cmd, out) => {
+    const assertOrFail = (out, callback) => {
         if (out.assertions){
             throw new Error('Illegal combination of assert and fails! Can only have either of both')
         }
-        out.assertions = cmd === 'assert' ? assert() : fails()
+        return callback()
     }
     const out = {}
     const code = []
@@ -98,8 +98,8 @@ export const parse = (src) => {
         if (cmd) {
             switch(cmd){
                 case 'describe': out.description = describe(); break
-                case 'assert':
-                case 'fails': assertOrFail(cmd, out); break
+                case 'assert': out.assertions = assertOrFail(out, assert); break
+                case 'fails': out.assertions = assertOrFail(out, fails); break
                 case 'input': out.input = input(); break
                 default: {
                     throw new Error(`${ctx.loc()}: Invalid command: ${cmd}`)
