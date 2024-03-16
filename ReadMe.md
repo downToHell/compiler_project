@@ -74,12 +74,13 @@ So far the compiler implements the following language structures as defined by [
 - While loops
 - `break` and `continue`
 - Functions
+- Pointers (except for function pointers)
 
 ### Special features
 
 There are some special features in my language implementation that are not mentioned by the specification:
 
-- builtin `pow` for exponentiation (Limitation: does not support negative exponents)
+- builtin `pow` for exponentiation (Limitation: does not support negative exponents and treats 0 ** 0 as undefined)
 - Binary operator `**` (which calls the above mentioned function)
 - short-hand syntax for one line functions e.g. `fun square(x: Int): Int = x * x`
 
