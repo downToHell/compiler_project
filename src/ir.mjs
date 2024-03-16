@@ -31,10 +31,11 @@ export function LoadIntConst(value, dest){
     this.dest = dest
 }
 
-export function Copy(source, dest){
+export function Copy(source, dest, refDepth){
     Instruction.call(this)
     this.source = source
     this.dest = dest
+    this.refDepth = refDepth || 0
 }
 
 export function Call(fun, args, dest){

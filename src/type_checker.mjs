@@ -3,10 +3,9 @@ import * as type from './types.mjs'
 import { SymTab } from './symtab.mjs'
 import { TokenType } from './tokenizer.mjs'
 
-const { Int, Bool, Unit, BasicTypes, FunType } = type
+const { Int, Bool, Unit, BasicType, PtrType, FunType } = type
 
-const ARITHMETIC_OPS = [TokenType.PLUS, TokenType.MINUS, TokenType.STAR,
-                        TokenType.DIV, TokenType.MOD, TokenType.POW]
+const ARITHMETIC_OPS = [TokenType.PLUS, TokenType.MINUS, TokenType.STAR, TokenType.DIV, TokenType.MOD, TokenType.POW]
 const EQUALITY_OPS = [TokenType.EQ_EQ, TokenType.NE]
 const LOGICAL_OPS = [TokenType.AND, TokenType.OR]
 const COMPARISON_OPS = [TokenType.LT, TokenType.LE, TokenType.GT, TokenType.GE]
@@ -20,10 +19,16 @@ function TypeChecker(_env){
     env.addIfAbsent('print_int', type.PrintIntFn)
     env.addIfAbsent('print_bool', type.PrintBoolFn)
     env.addIfAbsent('read_int', type.ReadIntFn)
+    env.addIfAbsent(TokenType.AMP, type.AddressOfOp)
+    env.addIfAbsent(TokenType.UNARY_STAR, type.DereferenceOp)
     env.addIfAbsent(TokenType.UNARY_MINUS, type.ArithmeticNegation)
     env.addIfAbsent(TokenType.NOT, type.LogicalNegation)
 
     const funStack = []
+
+    const toType = (f) => {
+        return f.refDepth === 0 ? new BasicType(f.ident.name) : new PtrType(f.ident.name, f.refDepth)
+    }
 
     this.typecheck = function(node){
         switch(node.constructor){
@@ -63,7 +68,7 @@ function TypeChecker(_env){
         return this.typeOfCall({ target: { name: node.op }, args: [node.left, node.right], loc: node.loc })
     }
     this.typeOfUnaryExpr = function(node){
-        return this.typeOfCall({ target: { name: node.op === TokenType.MINUS ? TokenType.UNARY_MINUS : node.op }, args: [node.right], loc: node.loc })
+        return this.typeOfCall({ target: { name: ast.encodeOp(node.op) }, args: [node.right], loc: node.loc })
     }
     this.typeOfCall = function(node){
         const fun = env.getSymbol(node.target.name)
@@ -72,7 +77,7 @@ function TypeChecker(_env){
         if (!fun.accept(...args)){
             throw new Error(`${node.loc}: Function '${node.target.name}' expected ${fun.argStr()}, got (${args.join(', ')})`)
         }
-        return fun.ret
+        return typeof fun.ret === 'function' ? fun.ret(...args) : fun.ret
     }
     this.typeOfBlock = function(node){
         env = new SymTab(env)
@@ -110,13 +115,6 @@ function TypeChecker(_env){
         return Unit
     }
     this.typeOfFunDeclaration = function(node){
-        const toType = (f) => {
-            const type = BasicTypes[f.name]
-            if (!type){
-                throw new Error(`${f.loc}: Unknown type: ${f.name}`)
-            }
-            return type
-        }
         const args = node.args.map(f => toType(f.type))
         const fun = new FunType(args, toType(node.retType))
         env.addSymbol(node.ident.name, fun)
@@ -127,8 +125,8 @@ function TypeChecker(_env){
         const fun = funStack.at(-1)
         const val = this.typecheck(node.value)
 
-        if (val.name != fun.retType.name){
-            throw new Error(`${node.loc}: Invalid return type ${val}, expected ${fun.retType.name} instead`)
+        if (!val.is(fun.retType)){
+            throw new Error(`${node.loc}: Invalid return type ${val}, expected ${fun.retType} instead`)
         }
         return Unit
     }
@@ -139,19 +137,19 @@ function TypeChecker(_env){
     }
     this.typeOfAssignment = function(node){
         const type = this.typecheck(node.expr)
+        const res = this.typecheck(node.target)
 
-        if (env.getSymbol(node.target.name) !== type){
-            throw new Error(`${node.loc}: Reassignment of ${node.target.name} with type '${type}' is not allowed`)
+        if (!res.is(type)){
+            throw new Error(`${node.loc}: Reassignment of ${node.target} with type '${type}' is not allowed`)
         }
-        env.setSymbol(node.target.name, type)
         return type
     }
     this.typeOfTypeExpr = function(node){
         const type = this.typecheck(node.expr)
 
         // TODO: only works for BasicTypes! Implement FunType?
-        if (type.name !== node.type.name){
-            throw new Error(`${node.loc}: Invalid type expression: expected ${node.type.name}, got ${type}`)
+        if (!type.is(node.type)){
+            throw new Error(`${node.loc}: Invalid type expression: expected ${node.type}, got ${type}`)
         }
         return type
     }
@@ -160,7 +158,7 @@ function TypeChecker(_env){
 
         funStack.forEach(fun => {
             env = new SymTab(env)
-            fun.args.forEach(f => env.addSymbol(f.expr.name, BasicTypes[f.type.name]))
+            fun.args.forEach(f => env.addSymbol(f.expr.name, toType(f.type)))
             this.typecheck(fun.body)
             env = env.getParent()
             funStack.pop()

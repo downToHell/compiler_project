@@ -1,4 +1,5 @@
 import { EOL } from 'os'
+import { TokenType } from './tokenizer.mjs'
 
 export function Expression(loc){
     this.loc = loc
@@ -112,6 +113,13 @@ export function Block(exprs, loc){
     this.toString = () => `{${exprs.join('; ')}}`
 }
 
+export function TypeId(ident, refDepth, loc){
+    Expression.call(this, loc)
+    this.ident = ident
+    this.refDepth = refDepth
+    this.toString = () => `${ident.name}${'*'.repeat(refDepth)}`
+}
+
 export function TypeExpr(type, expr, loc){
     Expression.call(this, loc)
     this.type = type
@@ -131,4 +139,12 @@ export function Module(exprs, loc){
     }
     this.each = (callback) => callback(exprs)
     this.toString = () => `${exprs.join(EOL)}`
+}
+
+export const encodeOp = (op) => {
+    const encoded = {
+        '-': TokenType.UNARY_MINUS,
+        '*': TokenType.UNARY_STAR
+    }
+    return encoded[op] ? encoded[op] : op
 }

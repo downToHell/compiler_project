@@ -15,7 +15,9 @@ const TokenType = Object.freeze({
     PLUS: '+',
     MINUS: '-',
     UNARY_MINUS: 'unary_-',
+    AMP: '&',
     STAR: '*',
+    UNARY_STAR: 'unary_*',
     POW: '**',
     DIV: '/',
     MOD: '%',
@@ -149,6 +151,7 @@ function Tokenizer(inp, options){
         let ch = advance()
 
         switch (ch){
+            case TokenType.AMP:
             case TokenType.PLUS:
             case TokenType.MINUS:
             case TokenType.MOD:

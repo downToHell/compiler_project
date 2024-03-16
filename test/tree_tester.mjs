@@ -262,7 +262,7 @@ function VarNode(expr){
     }
 }
 
-function TypeNode(expr){
+function TypeExprNode(expr){
     GuardedTestNode.call(this)
 
     this.isTypeExpr = function isTypeExpr(){
@@ -277,6 +277,25 @@ function TypeNode(expr){
     this.andExpr = (callback) => {
         this.__check(this.isTypeExpr)
         callback(new TreeTester(expr.expr))
+        return this
+    }
+}
+
+function TypeIdNode(expr){
+    GuardedTestNode.call(this)
+
+    this.isTypeId = function isTypeId(){
+        assert.ok(expr instanceof ast.TypeId)
+        return this.__topLevelCall(this)
+    }
+    this.andIdent = (callback) => {
+        this.__check(this.isTypeId)
+        callback(new TreeTester(expr.ident))
+        return this
+    }
+    this.hasReferenceDepth = (value) => {
+        this.__check(this.isTypeId)
+        assert.strictEqual(expr.refDepth, value)
         return this
     }
 }
@@ -324,7 +343,8 @@ function TreeTester(expr){
     this.isCall = () => new CallNode(expr).isCall()
     this.isReturn = () => new ReturnNode(expr).isReturn()
     this.isVarDecl = () => new VarNode(expr).isVarDecl()
-    this.isTypeExpr = () => new TypeNode(expr).isTypeExpr()
+    this.isTypeId = () => new TypeIdNode(expr).isTypeId()
+    this.isTypeExpr = () => new TypeExprNode(expr).isTypeExpr()
     this.isLiteral = () => new LiteralNode(expr).isLiteral()
     this.isIdentifier = () => new IdentifierNode(expr).isIdentifier()
     this.isUndefined = () => assert.ok(expr === undefined)

@@ -2,7 +2,9 @@ import assert from 'node:assert'
 import { Parser } from '../src/parser.mjs'
 import { Tokenizer } from '../src/tokenizer.mjs'
 import { TypeChecker } from '../src/type_checker.mjs'
-import { Bool, FunType, Int, Unit } from '../src/types.mjs'
+import { Bool, FunType, PtrType, Int, Unit } from '../src/types.mjs'
+
+export const IntPtr = new PtrType('Int', 1)
 
 const typecheck = (src, callback) => {
     const scn = new Tokenizer(src)
@@ -18,7 +20,7 @@ const typecheckModule = (src) => typecheck(src, (m) => m)
 
 describe('Typechecker tests', function(){
     it('typechecks simple addition', function(){
-        assert.ok(typecheck('1 + 2') === Int)
+        assert.ok(typecheck('1 + 2').is(Int))
     })
 
     it('rejects invalid arithmetics', function(){
@@ -26,9 +28,9 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks unary expressions', function(){
-        assert.ok(typecheck('not true') == Bool)
-        assert.ok(typecheck('-3') == Int)
-        assert.ok(typecheck('1+-5') == Int)
+        assert.ok(typecheck('not true').is(Bool))
+        assert.ok(typecheck('-3').is(Int))
+        assert.ok(typecheck('1+-5').is(Int))
     })
 
     it('rejects invalid unary expressions', function(){
@@ -37,7 +39,7 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks logical expressions', function(){
-        assert.ok(typecheck('3 != 3 or 3 < 5') === Bool)
+        assert.ok(typecheck('3 != 3 or 3 < 5').is(Bool))
     })
 
     it('rejects invalid logical operands', function(){
@@ -45,11 +47,11 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks simple if-expression', function(){
-        assert.ok(typecheck('if true then 3') === Unit)
+        assert.ok(typecheck('if true then 3').is(Unit))
     })
 
     it('typechecks if-else expression', function(){
-        assert.ok(typecheck('if 1 < 3 then 1 else 3') === Int)
+        assert.ok(typecheck('if 1 < 3 then 1 else 3').is(Int))
     })
 
     it('rejects unmatched if-else types', function(){
@@ -57,11 +59,11 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks variable declaration', function(){
-        assert.ok(typecheck('{ var x = 3; x }') === Int)
+        assert.ok(typecheck('{ var x = 3; x }').is(Int))
     })
 
     it('typechecks variable assignment', function(){
-        assert.ok(typecheck('{ var x = 3; x = 5 }') === Int)
+        assert.ok(typecheck('{ var x = 3; x = 5 }').is(Int))
     })
 
     it('rejects reassignment with differing type', function(){
@@ -73,20 +75,30 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks typed variable', function(){
-        assert.ok(typecheck('var x: Int = 5 + 6') === Int)
-        assert.ok(typecheck('var y: Bool = true') === Bool)
-        assert.ok(typecheck('var z: Unit = while 2 > 5 do print_int(1)') === Unit)
+        assert.ok(typecheck('var x: Int = 5 + 6').is(Int))
+        assert.ok(typecheck('var y: Bool = true').is(Bool))
+        assert.ok(typecheck('var z: Unit = while 2 > 5 do print_int(1)').is(Unit))
+        assert.ok(typecheck('{ var a: Int = 3; var b: Int* = &a; *b }').is(Int))
+        assert.ok(typecheck('{ var c: Int = 5; var d: Int* = &c; d }').is(IntPtr))
+        assert.ok(typecheck('{ var e: Int = 7; var f: Int* = &e; var g: Int** = &f; *g }').is(IntPtr))
     })
 
     it('rejects invalid type expression', function(){
         assert.throws(() => typecheck('var x: Int = true'))
         assert.throws(() => typecheck('var y: Bool = 1'))
         assert.throws(() => typecheck('var z: Unit = if 3 then 2 else 1'))
+        assert.throws(() => typecheck('var a: Int* = 9'))
+        assert.throws(() => typecheck('{ var b: Int = 3; var c: Int** = &b }'))
+    })
+
+    it('rejects invalid pointer operations', function(){
+        assert.throws(() => typecheck('*3'))
+        assert.throws(() => typecheck('*3 = 5'))
     })
 
     it('typechecks built-in function calls', function(){
-        assert.ok(typecheck('print_int(3)') === Unit)
-        assert.ok(typecheck('{ var x = 3; print_int(x) }') === Unit)
+        assert.ok(typecheck('print_int(3)').is(Unit))
+        assert.ok(typecheck('{ var x = 3; print_int(x) }').is(Unit))
     })
 
     it('rejects invalid function calls', function(){
@@ -97,17 +109,23 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks simple function declarations', function(){
-        let res = typecheck('fun square(x: Int): Int = x * x')
+        let res = typecheckModule('fun square(x: Int): Int = x * x')[0]
         assert.ok(res instanceof FunType)
         assert.strictEqual(res.args.length, 1)
-        assert.ok(res.args[0] === Int)
-        assert.ok(res.ret === Int)
+        assert.ok(res.args[0].is(Int))
+        assert.ok(res.ret.is(Int))
 
-        res = typecheck('fun print_int_twice(x: Int): Unit { print_int(x); print_int(x); }')
+        res = typecheckModule('fun print_int_twice(x: Int): Unit { print_int(x); print_int(x); }')[0]
         assert.ok(res instanceof FunType)
         assert.strictEqual(res.args.length, 1)
-        assert.ok(res.args[0] === Int)
-        assert.ok(res.ret === Unit)
+        assert.ok(res.args[0].is(Int))
+        assert.ok(res.ret.is(Unit))
+
+        res = typecheckModule('fun square_inplace(p: Int*): Unit { *p = *p * *p; }')[0]
+        assert.ok(res instanceof FunType)
+        assert.strictEqual(res.args.length, 1)
+        assert.ok(res.args[0].is(IntPtr))
+        assert.ok(res.ret.is(Unit))
     })
 
     it('typechecks return expressions', function(){

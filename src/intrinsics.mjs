@@ -18,6 +18,7 @@ const Mnemonic = Object.freeze({
     SUBQ: 'subq',
     IMULQ: 'imulq',
     CALL: 'call',
+    LEAQ: 'leaq',
     CQTO: 'cqto',
     CMPQ: 'cmpq',
     IDIVQ: 'idivq',
@@ -40,7 +41,8 @@ const {
     ADDQ, CMPQ, CQTO, IDIVQ,
     IMULQ, MOVQ, NEGQ, SETE,
     SETG, SETGE, SETL, SETLE,
-    SETNE, SUBQ, XORQ, CALL
+    SETNE, SUBQ, XORQ, CALL,
+    LEAQ
 } = Mnemonic
 
 const argMap = Object.freeze([RDI, RSI, RDX, RCX, R8, R9])
@@ -64,6 +66,15 @@ const unary_minus = (options) => {
     const a = _unwrap(options)
     a.emit(MOVQ, a.refs[0], a.res)
     a.emit(NEGQ, a.res)
+}
+const dereference = (options) => {
+    const a = _unwrap(options)
+    a.emit(MOVQ, a.refs[0], RCX)
+    a.emit(MOVQ, `(${RCX})`, a.res)
+}
+const address_of = (options) => {
+    const a = _unwrap(options)
+    a.emit(LEAQ, a.refs[0], a.res)
 }
 const not = (options) => {
     const a = _unwrap(options)
@@ -148,6 +159,8 @@ const ge = (options) => _intComparison(options, SETGE)
 
 const allIntrinsics = {
     'unary_-': unary_minus,
+    'unary_*': dereference,
+    '&': address_of,
     'not': not,
     '+': plus,
     '-': minus,

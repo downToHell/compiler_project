@@ -60,7 +60,7 @@ const getIRVariables = (fun) => {
     return Object.values(res)
 }
 
-const { RAX, RBP, RSP } = intr.Register
+const { RAX, RBP, RSP, RCX } = intr.Register
 const {
     MOVQ, POPQ, PUSHQ, RET,
     SUBQ, CALL, JMP, JNE,
@@ -134,7 +134,18 @@ function AssemblyGenerator(context){
                 case ir.LoadBoolConst: emitInsn(MOVQ, ins.value ? 1 : 0, globals.getRef(ins.dest)); break
                 case ir.Copy: {
                     emitInsn(MOVQ, globals.getRef(ins.source), RAX)
-                    emitInsn(MOVQ, RAX, globals.getRef(ins.dest))
+
+                    if (ins.refDepth > 0){
+                        emitInsn(MOVQ, globals.getRef(ins.dest), RCX)
+
+                        while (ins.refDepth > 1){
+                            emitInsn(MOVQ, `(${RCX})`, RCX)
+                            ins.refDepth--
+                        }
+                        emitInsn(MOVQ, RAX, `(${RCX})`)
+                    } else {
+                        emitInsn(MOVQ, RAX, globals.getRef(ins.dest))
+                    }
                     break
                 }
                 case ir.Jump: emitInsn(JMP, makeJumpTarget(ins.label.name)); break

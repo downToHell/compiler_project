@@ -1,0 +1,19 @@
+# describe(square inplace)
+# input(3)
+fun square(x: Int*): Unit {
+    *x = *x * *x;
+}
+var k = read_int();
+square(&k);
+print_int(k)
+# assert(9)
+---
+# describe(nested pointer)
+var x: Int = 3;
+var y: Int* = &x;
+var z: Int** = &y;
+var a: Int*** = &z;
+***a = 5;
+print_int(***a);
+print_int(x);
+# assert([5, 5])

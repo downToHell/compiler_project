@@ -95,6 +95,18 @@ describe('Tokenizer tests', function(){
         assert.deepStrictEqual(tokenize('var x: Int = 3'), expected)
     })
 
+    it('recognizes address operations', function(){
+        const expected = [
+            makeToken('&', TokenType.AMP),
+            makeToken('x', TokenType.IDENTIFIER),
+            makeToken('*', TokenType.STAR),
+            makeToken('ptr', TokenType.IDENTIFIER),
+            makeToken('Int', TokenType.IDENTIFIER),
+            makeToken('*', TokenType.STAR)
+        ]
+        assert.deepStrictEqual(tokenize('&x *ptr Int*'), expected)
+    })
+
     it('recognizes comparisons', function(){
         const expected = [
             makeToken('<', TokenType.LT),

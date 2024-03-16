@@ -65,7 +65,8 @@ function ParserContext(tokens){
     }
     this.expectLoop = (type) => {
         if (!this.isLoopLevel()){
-            throw new Error(`${this.peek().loc}: can't ${type === TokenType.BREAK ? 'break' : 'continue'} because there is no active loop`)
+            const expr = type === TokenType.BREAK ? 'break' : 'continue'
+            throw new Error(`${this.peek().loc}: can't ${expr} because there is no active loop`)
         }
         this.expect(type, `Expected ${type}, got ${this.peek().type}`)
     }
@@ -81,6 +82,14 @@ function ParserContext(tokens){
         }
         return expr instanceof ast.Block
     }
+    this.isAssignable = (expr) => {
+        if (expr instanceof ast.Identifier){
+            return true
+        } else if (expr instanceof ast.UnaryExpr && expr.op === TokenType.STAR){
+            return true
+        }
+        return false
+    }
     this.isTopLevel = () => (level & LVL_TOP) === LVL_TOP
     this.isLoopLevel = () => (level & LVL_LOOP) === LVL_LOOP
     this.replaceLevel = (l1, l2) => {
@@ -89,6 +98,7 @@ function ParserContext(tokens){
     }
     this.enterLevel = (l) => level |= l
     this.exitLevel = (l) => level &= ~l
+    this.pos = () => pos
 
     this.checkReturn = (exprs) => {
         if (exprs.length === 0){
@@ -121,8 +131,17 @@ function Parser(tokens, options){
         consume, expect, isBlock,
         lookbehind, checkReturn,
         enterLevel, replaceLevel,
-        exitLevel, expectLoop
+        exitLevel, expectLoop,
+        isAssignable
     } = ctx
+
+    const powTokenFix = () => {
+        const pow = tokens.splice(ctx.pos(), 1)[0]
+        tokens.splice(ctx.pos(), 0,
+            new Token(TokenType.STAR, TokenType.STAR, new SourceLocation(pow.loc.column, pow.loc.line)),
+            new Token(TokenType.STAR, TokenType.STAR, new SourceLocation(pow.loc.column+1, pow.loc.line)) 
+        )
+    }
 
     this.parse = function(){
         return this.parseModule(peek().loc)
@@ -159,7 +178,7 @@ function Parser(tokens, options){
     this.parseArgument = function(loc){
         const ident = this.parseIdentifier(peek().loc)
         expect(TokenType.COLON, `Expected ${TokenType.COLON}, got ${peek().type}`)
-        const type = this.parseIdentifier(peek().loc)
+        const type = this.parseTypeId(peek().loc)
         return new ast.TypeExpr(type, ident, loc)
     }
     this.parseArgumentList = function(){
@@ -179,7 +198,7 @@ function Parser(tokens, options){
         const ident = this.parseIdentifier(peek().loc)
         const args = this.parseArgumentList()
         expect(TokenType.COLON, `Expected ${TokenType.COLON}, got ${peek().type}`)
-        const retType = this.parseIdentifier(peek().loc)
+        const retType = this.parseTypeId(peek().loc)
         let body
         replaceLevel(LVL_TOP, LVL_FUN)
 
@@ -208,13 +227,22 @@ function Parser(tokens, options){
         }
         return new ast.Return(value, loc)
     }
+    this.parseTypeId = function(loc){
+        const typeId = this.parseIdentifier(peek().loc)
+        let refDepth = 0
+
+        while (match(TokenType.STAR, TokenType.POW)){
+            refDepth += advance().type === TokenType.POW ? 2 : 1
+        }
+        return new ast.TypeId(typeId, refDepth, loc)
+    }
     this.parseVarDeclaration = function(loc){
         expect(TokenType.VAR, `Expected ${TokenType.VAR}, got ${peek().type}`)
         const ident = this.parseIdentifier(peek().loc)
         let type
 
         if (consume(TokenType.COLON)){
-            type = this.parseIdentifier(peek().loc)
+            type = this.parseTypeId(peek().loc)
         }
         expect(TokenType.EQ, `Expected ${TokenType.EQ}, got ${peek().type}`)
         const initializer = this.parseExpression(peek().loc)
@@ -264,7 +292,7 @@ function Parser(tokens, options){
         if (consume(TokenType.EQ)){
             const value = this.parseExpression(peek().loc)
 
-            if (expr instanceof ast.Identifier){
+            if (isAssignable(expr)){
                 return new ast.Assignment(expr, value, loc)
             }
             throw new Error(`${loc}: Invalid assignment target!`)
@@ -287,9 +315,14 @@ function Parser(tokens, options){
         return left
     }
     this.parseUnaryExpression = function(loc){
-        if (match(TokenType.MINUS, TokenType.NOT)){
+        if (match(TokenType.POW)) powTokenFix()
+        if (match(TokenType.MINUS, TokenType.STAR, TokenType.NOT)){
             const op = advance()
             const right = this.parseUnaryExpression(peek().loc)
+            return new ast.UnaryExpr(right, op.value, loc)
+        } else if (match(TokenType.AMP)){
+            const op = advance()
+            const right = this.parseIdentifier(peek().loc)
             return new ast.UnaryExpr(right, op.value, loc)
         }
         return this.parseFunctionCall(loc)

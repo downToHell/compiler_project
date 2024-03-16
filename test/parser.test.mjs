@@ -18,6 +18,9 @@ const isLiteral = (value) => {
 const isIdentifier = (name) => {
     return (ident) => (ident = ident.isIdentifier()) && name && ident.hasName(name)
 }
+const isTypeId = (name) => {
+    return (type) => (type = type.isTypeId()) && name && type.andIdent(isIdentifier(name))
+}
 
 describe('Parser tests', function(){
 
@@ -250,10 +253,49 @@ describe('Parser tests', function(){
                 .andIdent(isIdentifier('x'))
                 .andInitializer(init => {
                     init.isTypeExpr()
-                        .andType(isIdentifier('Int'))
+                        .andType(isTypeId('Int'))
                         .andExpr(isLiteral(true))
                 })
         })
+
+        parse('var y: Int*** = &x', expr => {
+            expect(expr.first())
+                .isVarDecl()
+                .andIdent(isIdentifier('y'))
+                .andInitializer(init => {
+                    init.isTypeExpr()
+                        .andType(type => {
+                            type.isTypeId()
+                                .andIdent(isIdentifier('Int'))
+                                .hasReferenceDepth(3)
+                        })
+                        .andExpr(expr => {
+                            expr.isUnaryExpr()
+                                .hasOperator('&')
+                                .andRight(isIdentifier('x'))
+                        })
+                })
+        })
+
+        parse('var z: Int = *x', expr => {
+            expect(expr.first())
+                .isVarDecl()
+                .andIdent(isIdentifier('z'))
+                .andInitializer(init => {
+                    init.isTypeExpr()
+                        .andType(isTypeId('Int'))
+                        .andExpr(expr => {
+                            expr.isUnaryExpr()
+                                .hasOperator('*')
+                                .andRight(isIdentifier('x'))
+                        })
+                })
+        })
+    })
+
+    it('rejects invalid address operations', function(){
+        assert.throws(() => parse('&4'))
+        assert.throws(() => parse('&&x'))
     })
 
     it('treats declaration as expression', function(){
@@ -350,10 +392,10 @@ describe('Parser tests', function(){
             expect(expr.first())
                 .isFunDecl()
                 .andIdent(isIdentifier('square'))
-                .andRetType(isIdentifier('Int'))
+                .andRetType(isTypeId('Int'))
                 .andArgAt(0, expr => {
                     expr.isTypeExpr()
-                        .andType(isIdentifier('Int'))
+                        .andType(isTypeId('Int'))
                         .andExpr(isIdentifier('x'))
                 })
         })
@@ -368,15 +410,15 @@ describe('Parser tests', function(){
             expect(expr.first())
                 .isFunDecl()
                 .andIdent(isIdentifier('logical_or'))
-                .andRetType(isIdentifier('Bool'))
+                .andRetType(isTypeId('Bool'))
                 .andArgAt(0, expr => {
                     expr.isTypeExpr()
-                        .andType(isIdentifier('Bool'))
+                        .andType(isTypeId('Bool'))
                         .andExpr(isIdentifier('a'))
                 })
                 .andArgAt(1, expr => {
                     expr.isTypeExpr()
-                        .andType(isIdentifier('Bool'))
+                        .andType(isTypeId('Bool'))
                         .andExpr(isIdentifier('b'))
                 })
         })
@@ -387,7 +429,7 @@ describe('Parser tests', function(){
             expect(expr.first())
                 .isFunDecl()
                 .andIdent(isIdentifier('fib'))
-                .andRetType(isIdentifier('Int'))
+                .andRetType(isTypeId('Int'))
                 .andArgAt(0, expr => expr.isTypeExpr())
                 .andBody(body => {
                     body.isBlock()

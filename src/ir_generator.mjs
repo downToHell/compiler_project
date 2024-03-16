@@ -44,6 +44,20 @@ function IRContext(_env){
     this.beginScope = () => env = new SymTab(env)
     this.endScope = () => env = env.getParent()
 
+    this.resolve = (target, refDepth) => {
+        refDepth = refDepth || 0
+
+        if (target instanceof ast.Identifier){
+            return {
+                _var: this.getSymbol(target.name),
+                refDepth
+            }
+        } else if (target instanceof ast.UnaryExpr){
+            return this.resolve(target.right, refDepth+1)
+        }
+        throw new Error(`Invalid node type: ${target}`)
+    }
+
     this.enterLoop = (begin, end) => loopStack.push({ begin, end })
     this.exitLoop = () => loopStack.pop()
     this.currentLoop = () => loopStack.at(-1)
@@ -195,7 +209,7 @@ function IRGenerator(_env){
     this.visitUnaryExpr = function(node){
         const _var = newVar()
         const right = visit(node.right)
-        emit(new ir.Call(node.op === TokenType.MINUS ? TokenType.UNARY_MINUS : node.op, [right], _var))
+        emit(new ir.Call(ast.encodeOp(node.op), [right], _var))
         return _var
     }
     this.visitIfExpr = function(node){
@@ -271,8 +285,8 @@ function IRGenerator(_env){
         return _var
     }
     this.visitAssignment = function(node){
-        const _var = ctx.getSymbol(node.target.name)
-        emit(new ir.Copy(visit(node.expr), _var))
+        const { _var, refDepth } = ctx.resolve(node.target)
+        emit(new ir.Copy(visit(node.expr), _var, refDepth))
         return _var
     }
     this.visitCall = function(node){
