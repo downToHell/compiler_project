@@ -235,6 +235,13 @@ describe('Parser tests', function(){
                 .andTarget(isIdentifier('f'))
                 .andArgAt(1, arg => arg.isBinaryExpr())
         })
+        parse('f(x, h())', expr => {
+            expect(expr.first())
+                .isCall()
+                .andTarget(isIdentifier('f'))
+                .andArgAt(0, isIdentifier('x'))
+                .andArgAt(1, arg => arg.isCall())
+        })
     })
 
     it('accepts variable declaration', function(){

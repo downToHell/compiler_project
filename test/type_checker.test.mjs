@@ -54,6 +54,10 @@ describe('Typechecker tests', function(){
         assert.ok(typecheck('if 1 < 3 then 1 else 3').is(Int))
     })
 
+    it('rejects if-then arithmetics', function(){
+        assert.throws(() => typecheck('1 * if true then 3'))
+    })
+
     it('rejects unmatched if-else types', function(){
         assert.throws(() => typecheck('if 1 == 1 then true else 3'))
     })
