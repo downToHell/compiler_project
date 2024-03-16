@@ -1,0 +1,12 @@
+# describe(pow negative)
+print_int(3 ** -1);
+# fails()
+---
+# describe(pow zero by zero)
+print_int(0 ** 0)
+# fails()
+---
+# describe(pow number by 0)
+print_int(1234560 ** 0);
+print_int(5 ** 0)
+# assert([1, 1])

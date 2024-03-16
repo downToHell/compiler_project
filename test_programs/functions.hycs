@@ -1,0 +1,18 @@
+# describe(no arg function)
+fun return_true(): Bool = true;
+print_bool(return_true())
+# assert(true)
+---
+# describe(unused arguments)
+fun kapoot(p: Int): Unit {
+    {}
+}
+print_bool(kapoot(1) == unit)
+# assert(true)
+---
+# describe(return unit literal)
+fun kapoot(p: Int): Unit {
+    return unit
+}
+print_bool(kapoot(2) == unit)
+# assert(true)

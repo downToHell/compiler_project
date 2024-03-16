@@ -2,7 +2,8 @@ import { EOL } from 'os'
 import { isLetter } from './src/tokenizer.mjs'
 import { SourceContext } from './src/source_context.mjs'
 
-const COMMAND_PREFIX = '#'
+export const COMMAND_PREFIX = '#'
+export const TEST_FAILED = '<failed>'
 
 export const parse = (src) => {
     const lines = src.split(EOL)
@@ -77,6 +78,17 @@ export const parse = (src) => {
     }
     const input = () => parseArray()
     const assert = () => parseArray()
+    const fails = () => {
+        expect('(')
+        expect(')')
+        return [[TEST_FAILED]]
+    }
+    const assertOrFail = (cmd, out) => {
+        if (out.assertions){
+            throw new Error('Illegal combination of assert and fails! Can only have either of both')
+        }
+        out.assertions = cmd === 'assert' ? assert() : fails()
+    }
     const out = {}
     const code = []
 
@@ -86,7 +98,8 @@ export const parse = (src) => {
         if (cmd) {
             switch(cmd){
                 case 'describe': out.description = describe(); break
-                case 'assert': out.assertions = assert(); break
+                case 'assert':
+                case 'fails': assertOrFail(cmd, out); break
                 case 'input': out.input = input(); break
                 default: {
                     throw new Error(`${ctx.loc()}: Invalid command: ${cmd}`)

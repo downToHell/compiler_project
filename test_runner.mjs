@@ -2,9 +2,9 @@
 import fs from 'fs'
 import path from 'path'
 import { EOL } from 'os'
-import { parse } from './test_parser.mjs'
 import { assemble } from './compiler_suite.mjs'
 import { execFileSync } from 'child_process'
+import { parse, TEST_FAILED } from './test_parser.mjs'
 
 const TEST_DIVIDER = '---'
 const TAB = '  '
@@ -38,7 +38,13 @@ function TestRunner(){
         return contents.split(TEST_DIVIDER).map(parse)
     }
     const runTest = (file, input) => {
-        return execFileSync(`./${file}`, { shell: true, encoding: 'utf-8', input })
+        const stdio = ['pipe', 'pipe', 'ignore']
+
+        try {
+            return execFileSync(`./${file}`, { shell: true, encoding: 'utf-8', stdio, input })
+        } catch {
+            return TEST_FAILED
+        }
     }
     const checkAssertions = (assertions, values) => {
         if (assertions.length != values.length){
@@ -67,7 +73,7 @@ function TestRunner(){
         } catch(e) {
             const msg = formatFail(`compilation error:
 ${TAB}${TAB}${TAB}${e.message}${EOL}`)
-            console.error(msg)
+            console.log(msg)
             return [ 0, input.length, 0 ]
         }
         let pass = 0, fail = 0, time = 0
@@ -90,7 +96,7 @@ ${TAB}${TAB}${TAB}${e.message}${EOL}`)
             } else {
                 const msg = formatFail(`${formatValue(value)}
 ${TAB}${TAB}${TAB}expected [${c.assertions[i].join(', ')}] got [${values.join(', ')}]`)
-                console.error(msg)
+                console.log(msg)
                 fail++
             }
         }

@@ -1,6 +1,6 @@
 # HY Compilers Project SS2024
 
-This is my personal and somewhat painful implementation of the compiler project posed by `CSM14204 Compilers` at University of Helsinki. Here is a brief overview of its features, an installation guide, special abilities and deficiencies.
+This is my personal and somewhat painful implementation of the compiler project posed by `CSM14204 Compilers` at University of Helsinki. Here is a brief overview of its features, an installation guide, special abilities and deficiencies and information on how to use its end-to-end test framework.
 
 ## Installation
 
@@ -89,6 +89,33 @@ There are some special features in my language implementation that are not menti
 - The short-hand syntax for functions inserts an implicit return right after the `=`-sign and parses anything but top-level blocks. So `fun square(x: Int): Int = { return x * x }` would be considered illegal and hence would not compile.
 - Return has been implemented as such that on a missing return expression at the end of a block it is automatically inserted by the parser at compile-time.
 - Accessing globals from a function is undefined behaviour: `var x = 3; fun print_x(): Unit { print_int(x) }`
+
+## End-to-End Test Framework
+
+The e2e test framework in use here supports 4 kinds of commands: `describe`, `input`, `assert` and `fails`. While most of them are pretty self-explanatory, here a short note on each of them nonetheless:
+
+| command | type | explanation |
+| ------- | ---- | ----------- |
+| `describe` | `string` | test name that will later show up in the console once you run your tests |
+| `input` | `array` or `string` | inputs to the program (retrieved by `read_int()`) |
+| `assert` | `array` or `string` | expected output values from the program (i.e. calls to `print_int` or `print_bool`) |
+| `fails` | `void` | expects that the execution of the test fails |
+
+All test command are prefixed by the command prefix `#`. This decision has been made as to design the framework as non-invasive as possible i.e. test files can still be compiled if they contain a single test only. To separate test cases from one another use the delimiter `---`. Test commands are to be coded in the following manner:
+
+**Example**
+
+```
+# describe(my test goes here)
+# input([2, 5])
+print_int(read_int() * read_int())
+# assert(10)
+```
+
+**Please note**:
+- both `input` and `assert` can either be comma separated values or arrays of strings
+- `assert` and `fail` can only be used exclusively
+- the use of `input` is optional
 
 ## Known Issues
 
