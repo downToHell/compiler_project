@@ -2,6 +2,13 @@
 
 This is my personal and somewhat painful implementation of the compiler project posed by `CSM14204 Compilers` at University of Helsinki. Here is a brief overview of its features, an installation guide, special abilities and deficiencies and information on how to use its end-to-end test framework.
 
+- [Installation](#installation)
+- [Structure](#structure)
+- [Running the compiler](#running-the-compiler)
+- [Features](#features)
+- [End-To-End Test Framework](#end-to-end-test-framework)
+- [Known Issues](#known-issues)
+
 ## Installation
 
 To run this compiler a JavaScript runtime of sorts is required. I'd suggest NodeJS for this purpose because it is also the platform I used to develop it with and I am certain it cooperates with! I've used NodeJS version 18.14.2 but you may use any more recent version as well. To get your copy of NodeJS on Ubuntu run:
