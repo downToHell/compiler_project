@@ -80,7 +80,7 @@ So far the compiler implements the following language structures as defined by [
 
 There are some special features in my language implementation that are not mentioned by the specification:
 
-- builtin `pow` for exponentiation (Limitation: does not support negative exponents and treats 0 ** 0 as undefined)
+- builtin `pow` for exponentiation (Limitation: does not support negative exponents and treats `0 ** 0` as undefined)
 - Binary operator `**` (which calls the above mentioned function)
 - short-hand syntax for one line functions e.g. `fun square(x: Int): Int = x * x`
 
@@ -88,6 +88,7 @@ There are some special features in my language implementation that are not menti
 
 - The short-hand syntax for functions inserts an implicit return right after the `=`-sign and parses anything but top-level blocks. So `fun square(x: Int): Int = { return x * x }` would be considered illegal and hence would not compile.
 - Return has been implemented as such that on a missing return expression at the end of a block it is automatically inserted by the parser at compile-time.
+- Accessing globals from a function is undefined behaviour: `var x = 3; fun print_x(): Unit { print_int(x) }`
 
 ## Known Issues
 
