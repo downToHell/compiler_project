@@ -76,7 +76,7 @@ function TypeChecker(_env){
     }
     this.typeOfBlock = function(node){
         env = new SymTab(env)
-        let last
+        let last = Unit
 
         for (let expr of node.exprs){
             last = this.typecheck(expr)

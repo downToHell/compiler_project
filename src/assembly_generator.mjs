@@ -41,10 +41,10 @@ function Globals(){
 }
 
 const getIRVariables = (fun) => {
-    const res = {}
+    const res = fun.args.reduce((acc, a) => { acc[a.name] = a; return acc }, {})
     const isIRVar = (obj) => ir.IRVar.prototype.isPrototypeOf(obj)
 
-    for (const ins of fun){
+    for (const ins of fun.ins){
         for (const field of ins.fields()){
             if (isIRVar(ins[field])){
                 res[ins[field].name] = ins[field]
@@ -122,7 +122,7 @@ function AssemblyGenerator(context){
         emitLabel(fun.ins.shift().name, true)
         emitInsn(PUSHQ, RBP)
         emitInsn(MOVQ, RSP, RBP)
-        emitInsn(SUBQ, globals.pushFrame(getIRVariables(fun.ins)), RSP)
+        emitInsn(SUBQ, globals.pushFrame(getIRVariables(fun)), RSP)
         fun.args.forEach((a, i) => emitInsn(MOVQ, intr.argMap[i], globals.getRef(a)))
 
         for (const ins of fun.ins){

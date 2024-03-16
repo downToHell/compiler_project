@@ -199,10 +199,12 @@ function Parser(tokens, options){
             throw new Error(`${loc}: Can't return from top-level code`)
         }
         expect(TokenType.RETURN, `Expected ${TokenType.RETURN}, got ${peek().type}`)
-        let value = null
+        let value
 
         if (!consume(TokenType.SEMICOLON)){
             value = this.parseExpression(peek().loc)
+        } else {
+            value = new ast.Literal(null, peek().loc)
         }
         return new ast.Return(value, loc)
     }
