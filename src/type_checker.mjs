@@ -27,7 +27,7 @@ function TypeChecker(_env){
     const funStack = []
 
     const toType = (f) => {
-        return f.refDepth === 0 ? new BasicType(f.ident.name) : new PtrType(f.ident.name, f.refDepth)
+        return f.refDepth === 0 ? new BasicType(f.ident.name) : new PtrType(new BasicType(f.ident.name), f.refDepth)
     }
 
     this.typecheck = function(node){
@@ -147,7 +147,6 @@ function TypeChecker(_env){
     this.typeOfTypeExpr = function(node){
         const type = this.typecheck(node.expr)
 
-        // TODO: only works for BasicTypes! Implement FunType?
         if (!type.is(node.type)){
             throw new Error(`${node.loc}: Invalid type expression: expected ${node.type}, got ${type}`)
         }

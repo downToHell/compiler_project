@@ -4,7 +4,7 @@ import { Tokenizer } from '../src/tokenizer.mjs'
 import { TypeChecker } from '../src/type_checker.mjs'
 import { Bool, FunType, PtrType, Int, Unit } from '../src/types.mjs'
 
-export const IntPtr = new PtrType('Int', 1)
+export const IntPtr = new PtrType(Int, 1)
 
 const typecheck = (src, callback) => {
     const scn = new Tokenizer(src)

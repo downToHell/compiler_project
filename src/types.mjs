@@ -1,28 +1,4 @@
-function BasicType(name){
-    this.name = name
-    this.refDepth = 0
-    this.is = (other) => {
-        if (typeof other === 'object'){
-            return this.is(other.toString())
-        } else if (typeof other === 'string'){
-            return this.name === other
-        }
-        return false
-    }
-    this.toString = () => this.name
-}
-
-function PtrType(name, refDepth){
-    this.name = name
-    this.refDepth = refDepth
-
-    this.addressOf = () => new PtrType(name, refDepth+1)
-    this.dereference = () => {
-        if (refDepth - 1 < 0){
-            throw new Error(`Can't dereference type ${name}`)
-        }
-        return new PtrType(name, refDepth-1)
-    }
+function Type(){
     this.is = (other) => {
         if (typeof other === 'object'){
             return this.is(other.toString())
@@ -31,10 +7,34 @@ function PtrType(name, refDepth){
         }
         return false
     }
-    this.toString = () => `${this.name}${'*'.repeat(refDepth)}`
+    this.toString = () => `<anonymous type>`
 }
 
-PtrType.prototype = Object.create(BasicType.prototype)
+function BasicType(name){
+    Type.call(this)
+    this.name = name
+    this.toString = () => name
+}
+
+BasicType.prototype = Object.create(Type.prototype)
+BasicType.prototype.constructor = BasicType
+
+function PtrType(base, refDepth){
+    Type.call(this)
+    this.base = base
+    this.refDepth = refDepth
+
+    this.addressOf = () => new PtrType(base, refDepth+1)
+    this.dereference = () => {
+        if (refDepth - 1 > 0){
+            return new PtrType(base, refDepth-1)
+        }
+        return base
+    }
+    this.toString = () => `${base instanceof FunType ? `(${base})`: base}${'*'.repeat(refDepth)}`
+}
+
+PtrType.prototype = Object.create(Type.prototype)
 PtrType.prototype.constructor = PtrType
 
 function FunType(args, ret){
@@ -113,19 +113,15 @@ export const Int = new BasicType('Int')
 export const Bool = new BasicType('Bool')
 export const Unit = new BasicType('Unit')
 
-export const AddressOfOp = new GenericFunType([BasicType], PtrType, (args) => {
+export const AddressOfOp = new GenericFunType([Type], PtrType, (args) => {
     const arg = args[0]
     if (arg instanceof PtrType) return arg.addressOf()
-    return new PtrType(arg.name, 1)
+    return new PtrType(arg, 1)
 })
 export const ArithmeticOp = new FunType([Int, Int], Int)
 export const ArithmeticNegation = new FunType([Int], Int)
 export const ComparisonOp = new FunType([Int, Int], Bool)
-export const DereferenceOp = new GenericFunType([PtrType], BasicType, (args) => {
-    const arg = args[0]
-    if (arg.constructor === BasicType) throw new Error(`Can't dereference type ${arg.name}`)
-    return arg.dereference()
-})
+export const DereferenceOp = new GenericFunType([PtrType], BasicType, (args) => args[0].dereference())
 export const LogicalOp = new FunType([Bool, Bool], Bool)
 export const LogicalNegation = new FunType([Bool], Bool)
 export const EqualityOp = new OverloadedFunType([[Int, Int], [Bool, Bool], [Unit, Unit]], Bool)
