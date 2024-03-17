@@ -98,8 +98,14 @@ function ParserContext(tokens){
     }
     this.enterLevel = (l) => level |= l
     this.exitLevel = (l) => level &= ~l
-    this.pos = () => pos
 
+    this.powTokenFix = () => {
+        const pow = tokens.splice(pos, 1)[0]
+        tokens.splice(pos, 0,
+            new Token(TokenType.STAR, TokenType.STAR, pow.loc.copy()),
+            new Token(TokenType.STAR, TokenType.STAR, pow.loc.copy(1)) 
+        )
+    }
     this.checkReturn = (exprs) => {
         if (exprs.length === 0){
             const unit = new ast.Literal(null, this.prev().loc)
@@ -132,16 +138,8 @@ function Parser(tokens, options){
         lookbehind, checkReturn,
         enterLevel, replaceLevel,
         exitLevel, expectLoop,
-        isAssignable
+        powTokenFix, isAssignable
     } = ctx
-
-    const powTokenFix = () => {
-        const pow = tokens.splice(ctx.pos(), 1)[0]
-        tokens.splice(ctx.pos(), 0,
-            new Token(TokenType.STAR, TokenType.STAR, new SourceLocation(pow.loc.column, pow.loc.line)),
-            new Token(TokenType.STAR, TokenType.STAR, new SourceLocation(pow.loc.column+1, pow.loc.line)) 
-        )
-    }
 
     this.parse = function(){
         return this.parseModule(peek().loc)

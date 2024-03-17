@@ -2,6 +2,11 @@ function SourceLocation(column, line){
     this.column = column
     this.line = line
 
+    this.copy = (cOffset, lOffset) => {
+        cOffset = cOffset || 0
+        lOffset = lOffset || 0
+        return new SourceLocation(column+cOffset, line+lOffset)
+    }
     this.toString = () => `[${line}:${column}]`
 }
 
