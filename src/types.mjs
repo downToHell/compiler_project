@@ -10,6 +10,12 @@ function Type(){
     this.toString = () => `<anonymous type>`
 }
 
+function ModuleType(base){
+    this.first = () => base.first()
+    this.each = (callback) => base.each(callback)
+    this.toString = () => `${base}`
+}
+
 function BasicType(name){
     Type.call(this)
     this.name = name
@@ -114,9 +120,7 @@ export const Bool = new BasicType('Bool')
 export const Unit = new BasicType('Unit')
 
 export const AddressOfOp = new GenericFunType([Type], PtrType, (args) => {
-    const arg = args[0]
-    if (arg instanceof PtrType) return arg.addressOf()
-    return new PtrType(arg, 1)
+    return args[0] instanceof PtrType ? args[0].addressOf() : new PtrType(args[0], 1)
 })
 export const ArithmeticOp = new FunType([Int, Int], Int)
 export const ArithmeticNegation = new FunType([Int], Int)
@@ -131,4 +135,4 @@ export const ReadIntFn = new FunType([], Int)
 export const ClearFn = new FunType([], Unit)
 export const ExitFn = new FunType([], Unit)
 
-export { BasicType, FunType, PtrType }
+export { BasicType, FunType, PtrType, ModuleType }

@@ -14,9 +14,9 @@ const typecheck = (src, callback) => {
     if (!callback){
         callback = (module) => module.first()
     }
-    return typechecker.typecheck(callback(parser.parse()))
+    return typechecker.typecheck(callback(parser.parse())).__type__
 }
-const typecheckModule = (src) => typecheck(src, (m) => m)
+const typecheckModule = (src) => typecheck(src, (m) => m).first().__type__
 
 describe('Typechecker tests', function(){
     it('typechecks simple addition', function(){
@@ -113,19 +113,19 @@ describe('Typechecker tests', function(){
     })
 
     it('typechecks simple function declarations', function(){
-        let res = typecheckModule('fun square(x: Int): Int = x * x')[0]
+        let res = typecheckModule('fun square(x: Int): Int = x * x')
         assert.ok(res instanceof FunType)
         assert.strictEqual(res.args.length, 1)
         assert.ok(res.args[0].is(Int))
         assert.ok(res.ret.is(Int))
 
-        res = typecheckModule('fun print_int_twice(x: Int): Unit { print_int(x); print_int(x); }')[0]
+        res = typecheckModule('fun print_int_twice(x: Int): Unit { print_int(x); print_int(x); }')
         assert.ok(res instanceof FunType)
         assert.strictEqual(res.args.length, 1)
         assert.ok(res.args[0].is(Int))
         assert.ok(res.ret.is(Unit))
 
-        res = typecheckModule('fun square_inplace(p: Int*): Unit { *p = *p * *p; }')[0]
+        res = typecheckModule('fun square_inplace(p: Int*): Unit { *p = *p * *p; }')
         assert.ok(res instanceof FunType)
         assert.strictEqual(res.args.length, 1)
         assert.ok(res.args[0].is(IntPtr))
