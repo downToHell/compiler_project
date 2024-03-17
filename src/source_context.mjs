@@ -16,11 +16,7 @@ function SourceContext(inp){
 
     this.col = () => column
     this.line = () => line
-    this.loc = () => {
-        let oldLoc = currentLoc
-        currentLoc = new SourceLocation(column, line)
-        return oldLoc
-    }
+    this.loc = () => currentLoc.copy()
 
     this.isEOF = () => pos >= inp.length
     this.peek = () => inp[pos]
