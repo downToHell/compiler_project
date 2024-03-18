@@ -127,7 +127,7 @@ print_int(read_int() * read_int())
 
 ## Known Issues
 
-- Currently, the following function cannot be compiled because of the implicit returns:
+- ~~Currently, the following function cannot be compiled because of the implicit returns:~~
 ```
 fun square(x: Int): Int {
     return x * x;

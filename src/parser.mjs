@@ -117,10 +117,16 @@ function ParserContext(tokens){
         return refDepth
     }
     this.checkReturn = (exprs) => {
+        const hasTopLevelReturn = () => {
+            if (exprs.length < 2) return false
+            if (!(exprs.at(-1) instanceof ast.Literal)) return false
+            return exprs.at(-1).value === null && hasReturn(exprs.at(-2))
+        }
+
         if (exprs.length === 0){
             const unit = new ast.Literal(null, this.prev().loc)
             exprs.push(new ast.Return(unit, this.prev().loc))
-        } else if (!hasReturn(exprs.at(-1))) {
+        } else if (!hasReturn(exprs.at(-1)) && !hasTopLevelReturn()){
             const last = exprs.pop()
             exprs.push(new ast.Return(last, last.loc))
         }
