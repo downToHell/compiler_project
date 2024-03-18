@@ -88,8 +88,9 @@ So far the compiler implements the following language structures as defined by [
 There are some special features in my language implementation that are not mentioned by the specification:
 
 - builtin `pow` for exponentiation (Limitation: does not support negative exponents and treats `0 ** 0` as undefined)
-- Binary operator `**` (which calls the above mentioned function)
+- binary operator `**` (which calls the above mentioned function)
 - short-hand syntax for one line functions e.g. `fun square(x: Int): Int = x * x`
+- there is basic pointer support in the interpreter, however, function pointers are not thoroughly tested
 
 ### Design decisions
 
@@ -97,16 +98,16 @@ There are some special features in my language implementation that are not menti
 - The short-hand syntax for functions inserts an implicit return right after the `=`-sign and parses anything but top-level blocks. So `fun square(x: Int): Int = { return x * x }` would be considered illegal and hence would not compile
 
 **Returns**
-- Return has been implemented as such that on a missing return expression at the end of a block it is automatically inserted by the parser at compile-time
-- Return from top-level code is not allowed, so `var x = 3; return` would not compile
-- There is a `unit`-Literal in the language eventhough it was dropped mid-course and it can be returned i.e. `return unit` works
+- return has been implemented as such that on a missing return expression at the end of a block it is automatically inserted by the parser at compile-time
+- return from top-level code is not allowed, so `var x = 3; return` would not compile
+- there is a `unit`-Literal in the language eventhough it was dropped mid-course and it can be returned i.e. `return unit` works
 
 **Globals**
-- Accessing globals from a function is undefined behaviour: `var x = 3; fun print_x(): Unit { print_int(x) }`
+- accessing globals from a function is undefined behaviour: `var x = 3; fun print_x(): Unit { print_int(x) }`
 
 **Pointers**
-- Combinations of unary-`*` and `&` are not allowed, so this `&*p` cannot be used. The only legal semantic unit to follow an `&` is an identifier
-- Assigning function values is allowed. Example:
+- combinations of unary-`*` and `&` are not allowed, so this `&*p` cannot be used. The only legal semantic unit to follow an `&` is an identifier
+- assigning function values is allowed. Example:
 ```kotlin
 fun foo(): Int {
     return 3;
@@ -120,7 +121,7 @@ print_int(ptr()) // prints 3
 ```
 
 **Other**
-- The compiler does not insert any `print_int`'s or `print_bool`'s itself. All printing has to be done explicitly in code
+- the compiler does not insert any `print_int`'s or `print_bool`'s itself. All printing has to be done explicitly in code
 
 ## Test Framework
 
