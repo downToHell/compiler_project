@@ -12,7 +12,23 @@ print_bool(kapoot(1) == unit)
 ---
 # describe(return unit literal)
 fun kapoot(p: Int): Unit {
-    return unit
+    return unit;
 }
 print_bool(kapoot(2) == unit)
 # assert(true)
+---
+# describe(function as condition)
+fun test(x: Int): Bool {
+    return x > 2;
+}
+var x = 3;
+
+if test(x) then {
+    print_bool(true);
+
+    while test(x) do {
+        print_int(x);
+        x = x - 1;
+    }
+}
+# assert([true, 3])

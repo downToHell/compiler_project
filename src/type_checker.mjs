@@ -46,7 +46,7 @@ function TCContext(_env){
         funStack.push(node)
         return fun
     }
-    this.currentFunction = () => funStack.at(-1)
+    this.currentFunction = () => funStack.at(0)
 
     this.finalizeModule = (callback) => {
         funStack.forEach(fun => {
@@ -89,7 +89,7 @@ function TypeChecker(_env){
             case ast.Return: return this.typeOfReturnExpr(node)
             case ast.VarDecl: return this.typeOfVarDeclaration(node)
             case ast.TypeExpr: return this.typeOfTypeExpr(node)
-            case ast.Grouping: return this.typecheck(node.expr)
+            case ast.Grouping: return assignType(node, this.typecheck(node.expr).__type__)
             case ast.Module: return this.typeOfModule(node)
             default: throw new Error(`Unknown ast node: ${node.constructor.name}`)
         }
@@ -115,7 +115,7 @@ function TypeChecker(_env){
         const args = node.args.map(f => this.typecheck(f).__type__)
 
         if (!(fun instanceof FunType)){
-            throw new Error(`${node.loc}: '${node.target}' is not callable!`)
+            throw new Error(`${node.loc}: Expression '${node.target}' is not callable!`)
         } else if (!fun.accept(...args)){
             throw new Error(`${node.loc}: Function '${node.target}' expected ${fun.argStr()}, got (${args.join(', ')})`)
         }
@@ -134,7 +134,7 @@ function TypeChecker(_env){
     this.typeOfIfExpr = function(node){
         const a = this.typecheck(node.cond).__type__
 
-        if (a !== Bool){
+        if (a.isNot(Bool)){
             throw new Error(`${node.loc}: Condition of if-clause must be a Bool, got ${a} instead`)
         } else if (typeof node.elsz === 'undefined'){
             return assignType(node, Unit)
@@ -142,7 +142,7 @@ function TypeChecker(_env){
         const b = this.typecheck(node.body).__type__
         const c = this.typecheck(node.elsz).__type__
 
-        if (b !== c){
+        if (b.isNot(c)){
             throw new Error(`${node.loc}: Types of then-clause and else-clause must match`)
         }
         return assignType(node, b)
@@ -150,7 +150,7 @@ function TypeChecker(_env){
     this.typeOfWhileExpr = function(node){
         const a = this.typecheck(node.cond).__type__
 
-        if (a !== Bool){
+        if (a.isNot(Bool)){
             throw new Error(`${node.loc}: Condition of when expression must be a Bool, got ${a} instead`)
         }
         this.typecheck(node.body)
@@ -164,7 +164,7 @@ function TypeChecker(_env){
         const fun = ctx.currentFunction()
         const val = this.typecheck(node.value).__type__
 
-        if (!val.is(fun.retType)){
+        if (val.isNot(fun.retType)){
             throw new Error(`${node.loc}: Invalid return type ${val}, expected ${fun.retType} instead`)
         }
         return assignType(node, Unit)
@@ -178,7 +178,7 @@ function TypeChecker(_env){
         const type = this.typecheck(node.expr).__type__
         const res = this.typecheck(node.target).__type__
 
-        if (!res.is(type)){
+        if (res.isNot(type)){
             throw new Error(`${node.loc}: Reassignment of ${node.target} with type '${type}' is not allowed`)
         }
         return assignType(node, type)
@@ -186,7 +186,7 @@ function TypeChecker(_env){
     this.typeOfTypeExpr = function(node){
         const type = this.typecheck(node.expr).__type__
 
-        if (!type.is(node.type)){
+        if (type.isNot(node.type)){
             throw new Error(`${node.loc}: Invalid type expression: expected ${node.type}, got ${type}`)
         }
         return assignType(node, type)

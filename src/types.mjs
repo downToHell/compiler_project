@@ -7,6 +7,7 @@ function Type(){
         }
         return false
     }
+    this.isNot = (other) => !this.is(other)
     this.toString = () => `<anonymous type>`
 }
 
@@ -54,7 +55,7 @@ function FunType(args, ret){
         }
 
         for (let i = 0; i < values.length; i++){
-            if (!args[i].is(values[i])){
+            if (args[i].isNot(values[i])){
                 return false
             }
         }
