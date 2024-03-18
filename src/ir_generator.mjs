@@ -2,6 +2,7 @@ import * as ast from './ast.mjs'
 import * as ir from './ir.mjs'
 import { SymTab } from './symtab.mjs'
 import { TokenType } from './tokenizer.mjs'
+import { FunType, pointsTo } from './types.mjs'
 
 const JMP_TARGET_END = 'end'
 const JMP_TARGET_BEGIN = 'begin'
@@ -11,6 +12,7 @@ function IRContext(_env){
     env.addIfAbsent('unit', new ir.IRVar('unit'))
 
     let data = {}
+    let funptr = {}
     let funStack = []
     let loopStack = []
     let nextVar = 1
@@ -45,6 +47,9 @@ function IRContext(_env){
     this.beginScope = () => env = new SymTab(env)
     this.endScope = () => env = env.getParent()
 
+    this.isFunPtr = (ident) => !!funptr[ident]
+    this.registerPointer = (ident) => funptr[ident] = true
+
     this.resolve = (target, refDepth) => {
         refDepth = refDepth || 0
 
@@ -58,7 +63,7 @@ function IRContext(_env){
         } else if (target instanceof ast.Grouping){
             return this.resolve(target.expr, refDepth)
         }
-        throw new Error(`Invalid node type: ${target}`)
+        throw new Error(`Non-resolvable node type: ${target}`)
     }
 
     this.enterLoop = (begin, end) => loopStack.push({ begin, end })
@@ -128,6 +133,20 @@ function IRGenerator(_env){
                 throw new Error(`Unknown ast node: ${node.constructor.name}`)
             }
         }
+    }
+    const resolveCall = (node) => {
+        const isCall = (node) => {
+            if (node instanceof ast.Call) return true
+            if (node instanceof ast.UnaryExpr) return isCall(node.right)
+            if (node instanceof ast.Grouping) return isCall(node.expr)
+            return false
+        }
+        const isFunctionName = (node) => {
+            return node.target instanceof ast.Identifier && !ctx.isFunPtr(node.target.name)
+        }
+        if (pointsTo(node, FunType) || isFunctionName(node)) return node.target.name
+        if (isCall(node.target)) return visit(node.target)
+        return ctx.resolve(node.target)._var
     }
 
     this.generate = function(node){
@@ -210,9 +229,15 @@ function IRGenerator(_env){
         return res
     }
     this.visitUnaryExpr = function(node){
-        const _var = newVar()
         const right = visit(node.right)
-        emit(new ir.Call(ast.encodeOp(node.op), [right], _var))
+        const op = ast.encodeOp(node.op)
+
+        if (op === TokenType.UNARY_STAR && pointsTo(node.right, FunType)){
+            node.__funptr__ = true
+            return right
+        }
+        const _var = newVar()
+        emit(new ir.Call(op, [right], _var))
         return _var
     }
     this.visitIfExpr = function(node){
@@ -283,7 +308,13 @@ function IRGenerator(_env){
     }
     this.visitVarDeclaration = function(node){
         const _var = newVar()
-        emit(new ir.Copy(visit(node.initializer), _var))
+        const init = visit(node.initializer)
+
+        if (node.initializer.__funptr__){
+            delete node.initializer.__funptr__
+            ctx.registerPointer(node.ident.name)
+        }
+        emit(new ir.Copy(init, _var))
         ctx.addSymbol(node.ident.name, _var)
         return _var
     }
@@ -294,8 +325,7 @@ function IRGenerator(_env){
     }
     this.visitCall = function(node){
         const _var = newVar()
-        const target = node.target instanceof ast.Identifier ? node.target.name : ctx.resolve(node.target)._var
-        emit(new ir.Call(target, node.args.map(a => visit(a)), _var))
+        emit(new ir.Call(resolveCall(node), node.args.map(a => visit(a)), _var))
         return _var
     }
     this.visitModule = function(node){

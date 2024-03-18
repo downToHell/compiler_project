@@ -130,6 +130,9 @@ export const Int = new BasicType('Int')
 export const Bool = new BasicType('Bool')
 export const Unit = new BasicType('Unit')
 
+export const isPointer = (node) => node.__type__ instanceof PtrType
+export const pointsTo = (node, type) => isPointer(node) && node.__type__.base instanceof type
+
 export const AddressOfOp = new GenericFunType([Type], PtrType, (args) => {
     return args[0] instanceof PtrType ? args[0].addressOf() : new PtrType(args[0], 1)
 })
