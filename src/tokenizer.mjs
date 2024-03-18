@@ -2,6 +2,7 @@ import { L, SourceContext } from './source_context.mjs'
 
 const TokenType = Object.freeze({
     EQ: '=',
+    ARROW: '=>',
     EQ_EQ: '==',
     NE: '!=',
     BANG: '!',
@@ -168,7 +169,10 @@ function Tokenizer(inp, options){
             case TokenType.STAR: return consume(TokenType.STAR) ? makeToken(TokenType.POW) : makeToken(ch)
             case TokenType.LT: return consume(TokenType.EQ) ? makeToken(TokenType.LE) : makeToken(ch)
             case TokenType.GT: return consume(TokenType.EQ) ? makeToken(TokenType.GE) : makeToken(ch)
-            case TokenType.EQ: return consume(TokenType.EQ) ? makeToken(TokenType.EQ_EQ) : makeToken(ch)
+            case TokenType.EQ: {
+                if (consume(TokenType.GT)) return makeToken(TokenType.ARROW)
+                return consume(TokenType.EQ) ? makeToken(TokenType.EQ_EQ) : makeToken(ch)
+            }
             case TokenType.BANG: return consume(TokenType.EQ) ? makeToken(TokenType.NE) : makeToken(ch)
             case ' ':
             case '\t':

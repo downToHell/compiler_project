@@ -79,6 +79,8 @@ function ParserContext(tokens){
             return expr.body instanceof ast.Block
         } else if (expr instanceof ast.WhileExpr){
             return expr.body instanceof ast.Block
+        } else if (expr instanceof ast.FunDecl){
+            return expr.body instanceof ast.Block
         }
         return expr instanceof ast.Block
     }
@@ -105,6 +107,14 @@ function ParserContext(tokens){
             new Token(TokenType.STAR, TokenType.STAR, pow.loc.copy()),
             new Token(TokenType.STAR, TokenType.STAR, pow.loc.copy(1)) 
         )
+    }
+    this.refDepth = () => {
+        let refDepth = 0
+
+        while (this.match(TokenType.STAR, TokenType.POW)){
+            refDepth += this.advance().type === TokenType.POW ? 2 : 1
+        }
+        return refDepth
     }
     this.checkReturn = (exprs) => {
         if (exprs.length === 0){
@@ -138,7 +148,8 @@ function Parser(tokens, options){
         lookbehind, checkReturn,
         enterLevel, replaceLevel,
         exitLevel, expectLoop,
-        powTokenFix, isAssignable
+        powTokenFix, isAssignable,
+        refDepth
     } = ctx
 
     this.parse = function(){
@@ -179,13 +190,13 @@ function Parser(tokens, options){
         const type = this.parseTypeId(peek().loc)
         return new ast.TypeExpr(type, ident, loc)
     }
-    this.parseArgumentList = function(){
+    this.parseArgumentList = function(next){
         expect(TokenType.LPAREN, `Expected ${TokenType.LPAREN}, got ${peek().type}`)
         const args = []
 
         if (match(TokenType.IDENTIFIER)){
             do {
-                args.push(this.parseArgument(peek().loc))
+                args.push(next(peek().loc))
             } while (consume(TokenType.COMMA))
         }
         expect(TokenType.RPAREN, `Expected ${TokenType.RPAREN}, got ${peek().type}`)
@@ -194,7 +205,7 @@ function Parser(tokens, options){
     this.parseFunDeclaration = function(loc){
         expect(TokenType.FUN, `Expected ${TokenType.FUN}, got ${peek().type}`)
         const ident = this.parseIdentifier(peek().loc)
-        const args = this.parseArgumentList()
+        const args = this.parseArgumentList(this.parseArgument.bind(this))
         expect(TokenType.COLON, `Expected ${TokenType.COLON}, got ${peek().type}`)
         const retType = this.parseTypeId(peek().loc)
         let body
@@ -225,14 +236,23 @@ function Parser(tokens, options){
         }
         return new ast.Return(value, loc)
     }
+    this.parseFunType = function(loc){
+        expect(TokenType.LPAREN, `Expected ${TokenType.LPAREN}, got ${peek().type}`)
+        const args = this.parseArgumentList(this.parseTypeId.bind(this))
+        expect(TokenType.ARROW, `Expected ${TokenType.ARROW}, got ${peek().type}`)
+        const retType = this.parseTypeId(peek().loc)
+        expect(TokenType.RPAREN, `Expected ${TokenType.RPAREN}, got ${peek().type}`)
+        return new ast.FunType(args, retType, loc)
+    }
     this.parseTypeId = function(loc){
-        const typeId = this.parseIdentifier(peek().loc)
-        let refDepth = 0
+        let typeId
 
-        while (match(TokenType.STAR, TokenType.POW)){
-            refDepth += advance().type === TokenType.POW ? 2 : 1
+        if (match(TokenType.LPAREN)){
+            typeId = this.parseFunType(peek().loc)
+        } else {
+            typeId = this.parseIdentifier(peek().loc)
         }
-        return new ast.TypeId(typeId, refDepth, loc)
+        return new ast.TypeId(typeId, refDepth(), loc)
     }
     this.parseVarDeclaration = function(loc){
         expect(TokenType.VAR, `Expected ${TokenType.VAR}, got ${peek().type}`)

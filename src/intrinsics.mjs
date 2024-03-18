@@ -7,6 +7,7 @@ const Register = Object.freeze({
     RCX: '%rcx',
     RBP: '%rbp',
     RSP: '%rsp',
+    RIP: '%rip',
     R8: '%r8',
     R9: '%r9'
 })

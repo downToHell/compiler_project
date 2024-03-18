@@ -33,7 +33,7 @@ function FunNode(expr){
     this.andArgAt = (i, callback) => {
         this.__check(this.isFun)
         assert.ok(expr.args.length > i)
-        callback(this.__checkedCall(new TreeTester(expr.args[i])))
+        callback(new TreeTester(expr.args[i]))
         return this
     }
     this.andBody = (callback) => {
@@ -246,7 +246,7 @@ function ReturnNode(expr){
 function VarNode(expr){
     GuardedTestNode.call(this)
 
-    this.isVarDecl = () => {
+    this.isVarDecl = function isVarDecl(){
         assert.ok(expr instanceof ast.VarDecl)
         return this.__topLevelCall(this)
     }
@@ -258,6 +258,25 @@ function VarNode(expr){
     this.andInitializer = (callback) => {
         this.__check(this.isVarDecl)
         callback(new TreeTester(expr.initializer))
+        return this
+    }
+}
+
+function FunTypeNode(expr){
+    GuardedTestNode.call(this)
+
+    this.isFunType = function isFunType(){
+        assert.ok(expr instanceof ast.FunType)
+        return this.__topLevelCall(this)
+    }
+    this.andArgAt = (i, callback) => {
+        this.__check(this.isFunType)
+        assert.ok(expr.args.length > i)
+        callback(new TreeTester(expr.args[i]))
+        return this
+    }
+    this.andRetType = (callback) => {
+        callback(this.__checkedCall(new TreeTester(expr.retType), this.isFunType))
         return this
     }
 }
@@ -343,6 +362,7 @@ function TreeTester(expr){
     this.isCall = () => new CallNode(expr).isCall()
     this.isReturn = () => new ReturnNode(expr).isReturn()
     this.isVarDecl = () => new VarNode(expr).isVarDecl()
+    this.isFunType = () => new FunTypeNode(expr).isFunType()
     this.isTypeId = () => new TypeIdNode(expr).isTypeId()
     this.isTypeExpr = () => new TypeExprNode(expr).isTypeExpr()
     this.isLiteral = () => new LiteralNode(expr).isLiteral()

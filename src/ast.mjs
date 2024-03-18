@@ -113,11 +113,18 @@ export function Block(exprs, loc){
     this.toString = () => `{${exprs.join('; ')}}`
 }
 
+export function FunType(args, retType, loc){
+    Expression.call(this, loc)
+    this.args = args
+    this.retType = retType
+    this.toString = () => `((${args.join(', ')}) => ${retType})`
+}
+
 export function TypeId(ident, refDepth, loc){
     Expression.call(this, loc)
     this.ident = ident
     this.refDepth = refDepth
-    this.toString = () => `${ident.name}${'*'.repeat(refDepth)}`
+    this.toString = () => `${ident}${'*'.repeat(refDepth)}`
 }
 
 export function TypeExpr(type, expr, loc){

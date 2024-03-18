@@ -27,7 +27,10 @@ function TCContext(_env){
     const funStack = []
 
     const toType = (a) => {
-        const baseType = new BasicType(a.ident.name)
+        if (a instanceof ast.FunType){
+            return new FunType(a.args.map(a => toType(a)), toType(a.retType))
+        }
+        const baseType = a.ident instanceof ast.Identifier ? new BasicType(a.ident.name) : toType(a.ident)
         return a.refDepth === 0 ? baseType : new PtrType(baseType, a.refDepth)
     }
 
@@ -108,11 +111,13 @@ function TypeChecker(_env){
         return this.typeOfCall(makeCall(ast.encodeOp(node.op), [node.right], node.loc))
     }
     this.typeOfCall = function(node){
-        const fun = ctx.getSymbol(node.target.name)
+        const fun = this.typecheck(node.target).__type__
         const args = node.args.map(f => this.typecheck(f).__type__)
 
-        if (!fun.accept(...args)){
-            throw new Error(`${node.loc}: Function '${node.target.name}' expected ${fun.argStr()}, got (${args.join(', ')})`)
+        if (!(fun instanceof FunType)){
+            throw new Error(`${node.loc}: '${node.target}' is not callable!`)
+        } else if (!fun.accept(...args)){
+            throw new Error(`${node.loc}: Function '${node.target}' expected ${fun.argStr()}, got (${args.join(', ')})`)
         }
         return assignType(node, typeof fun.ret === 'function' ? fun.ret(...args) : fun.ret)
     }

@@ -17,7 +17,7 @@ function Globals(){
 
         for (const _var of variables){
             if (varMap[_var] === undefined){
-                varMap[_var] = `-${stackUsed}(${RBP})`
+                varMap[_var] = _var.funLabel ? `${_var}(${RIP})` : `-${stackUsed}(${RBP})`
                 stackUsed += 8
             }
         }
@@ -60,7 +60,7 @@ const getIRVariables = (fun) => {
     return Object.values(res)
 }
 
-const { RAX, RBP, RSP, RCX } = intr.Register
+const { RAX, RBP, RSP, RCX, RIP } = intr.Register
 const {
     MOVQ, POPQ, PUSHQ, RET,
     SUBQ, CALL, JMP, JNE,
@@ -174,7 +174,7 @@ function AssemblyGenerator(context){
                             throw new Error(`Invalid arity for function '${ins.fun}': args > 6`)
                         }
                         ins.args.forEach((arg, i) => emitInsn(MOVQ, globals.getRef(arg), intr.argMap[i]))
-                        emitInsn(CALL, ins.fun)
+                        emitInsn(CALL, ins.fun instanceof ir.IRVar ? `*${globals.getRef(ins.fun)}` : ins.fun)
 
                         if (ins.args.length > 0 && !intr.builtin.includes(ins.fun)){
                             emitInsn(ADDQ, ins.args.length * 8, RSP)

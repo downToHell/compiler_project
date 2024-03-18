@@ -298,6 +298,77 @@ describe('Parser tests', function(){
                         })
                 })
         })
+
+        parse('var a: (() => Unit)* = &sayHello', expr => {
+            expect(expr.first())
+                .isVarDecl()
+                .andIdent(isIdentifier('a'))
+                .andInitializer(init => {
+                    init.isTypeExpr()
+                        .andType(type => {
+                            type.isTypeId()
+                                .andIdent(ident => {
+                                    ident.isFunType().andRetType(isTypeId('Unit'))
+                                })
+                                .hasReferenceDepth(1)
+                        })
+                        .andExpr(expr => {
+                            expr.isUnaryExpr()
+                                .hasOperator('&')
+                                .andRight(isIdentifier('sayHello'))
+                        })
+                })
+        })
+
+        parse('var b: ((Int) => Int)* = &square', expr => {
+            expect(expr.first())
+                .isVarDecl()
+                .andIdent(isIdentifier('b'))
+                .andInitializer(init => {
+                    init.isTypeExpr()
+                        .andType(type => {
+                            type.isTypeId()
+                                .andIdent(ident => {
+                                    ident.isFunType()
+                                        .andArgAt(0, isTypeId('Int'))
+                                        .andRetType(isTypeId('Int'))
+                                })
+                                .hasReferenceDepth(1)
+                        })
+                        .andExpr(expr => {
+                            expr.isUnaryExpr()
+                                .hasOperator('&')
+                                .andRight(isIdentifier('square'))
+                        })
+                })
+        })
+
+        parse('var c: (() => (() => Unit)*)* = &retFun', expr => {
+            expect(expr.first())
+                .isVarDecl()
+                .andIdent(isIdentifier('c'))
+                .andInitializer(init => {
+                    init.isTypeExpr()
+                        .andType(type => {
+                            type.isTypeId()
+                                .andIdent(ident => {
+                                    ident.isFunType()
+                                        .andRetType(ret => {
+                                            ret.isTypeId()
+                                                .andIdent(ident => {
+                                                    ident.isFunType().andRetType(isTypeId('Unit'))
+                                                })
+                                        })
+                                })
+                                .hasReferenceDepth(1)
+                        })
+                        .andExpr(expr => {
+                            expr.isUnaryExpr()
+                                .hasOperator('&')
+                                .andRight(isIdentifier('retFun'))
+                        })
+                })
+        })
     })
 
     it('rejects invalid address operations', function(){
@@ -404,6 +475,33 @@ describe('Parser tests', function(){
                     expr.isTypeExpr()
                         .andType(isTypeId('Int'))
                         .andExpr(isIdentifier('x'))
+                })
+        })
+    })
+
+    it('accepts complex function declaration', function(){
+        parse('fun call(x: ((Int) => Unit)*, y: Int): Unit = (*x)(y)', expr => {
+            expect(expr.first())
+                .isFunDecl()
+                .andIdent(isIdentifier('call'))
+                .andRetType(isTypeId('Unit'))
+                .andArgAt(0, expr => {
+                    expr.isTypeExpr()
+                        .andExpr(isIdentifier('x'))
+                        .andType(type => {
+                            type.isTypeId()
+                                .andIdent(ident => {
+                                    ident.isFunType()
+                                        .andArgAt(0, isTypeId('Int'))
+                                        .andRetType(isTypeId('Unit'))
+                                })
+                                .hasReferenceDepth(1)
+                        })
+                })
+                .andArgAt(1, expr => { 
+                    expr.isTypeExpr()
+                        .andExpr(isIdentifier('y'))
+                        .andType(isTypeId('Int'))
                 })
         })
     })

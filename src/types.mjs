@@ -44,6 +44,7 @@ PtrType.prototype = Object.create(Type.prototype)
 PtrType.prototype.constructor = PtrType
 
 function FunType(args, ret){
+    Type.call(this)
     this.args = args
     this.ret = ret
 
@@ -62,6 +63,9 @@ function FunType(args, ret){
     this.argStr = () => `(${args.join(', ')})`
     this.toString = () => `${this.argStr()} => ${ret}`
 }
+
+FunType.prototype = Object.create(Type.prototype)
+FunType.prototype.constructor = FunType
 
 function OverloadedFunType(args, ret){
     const init = (args) => {
@@ -94,6 +98,9 @@ function OverloadedFunType(args, ret){
     this.toString = () => `${this.argStr()} => ${ret}`
 }
 
+OverloadedFunType.prototype = Object.create(FunType.prototype)
+OverloadedFunType.prototype.constructor = OverloadedFunType
+
 function GenericFunType(genericArgs, genericRet, mapper){
     this.genericArgs = genericArgs
     this.genericRet = genericRet
@@ -115,6 +122,9 @@ function GenericFunType(genericArgs, genericRet, mapper){
     this.toString = () => `${this.argStr()} => ${typeof genericRet === 'function' ? genericRet.name : genericRet.toString()}`
 }
 
+GenericFunType.prototype = Object.create(FunType.prototype)
+GenericFunType.prototype.constructor = GenericFunType
+
 export const Int = new BasicType('Int')
 export const Bool = new BasicType('Bool')
 export const Unit = new BasicType('Unit')
@@ -125,7 +135,7 @@ export const AddressOfOp = new GenericFunType([Type], PtrType, (args) => {
 export const ArithmeticOp = new FunType([Int, Int], Int)
 export const ArithmeticNegation = new FunType([Int], Int)
 export const ComparisonOp = new FunType([Int, Int], Bool)
-export const DereferenceOp = new GenericFunType([PtrType], BasicType, (args) => args[0].dereference())
+export const DereferenceOp = new GenericFunType([PtrType], Type, (args) => args[0].dereference())
 export const LogicalOp = new FunType([Bool, Bool], Bool)
 export const LogicalNegation = new FunType([Bool], Bool)
 export const EqualityOp = new OverloadedFunType([[Int, Int], [Bool, Bool], [Unit, Unit]], Bool)

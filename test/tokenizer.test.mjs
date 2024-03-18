@@ -102,9 +102,10 @@ describe('Tokenizer tests', function(){
             makeToken('*', TokenType.STAR),
             makeToken('ptr', TokenType.IDENTIFIER),
             makeToken('Int', TokenType.IDENTIFIER),
-            makeToken('*', TokenType.STAR)
+            makeToken('*', TokenType.STAR),
+            makeToken('=>', TokenType.ARROW)
         ]
-        assert.deepStrictEqual(tokenize('&x *ptr Int*'), expected)
+        assert.deepStrictEqual(tokenize('&x *ptr Int* =>'), expected)
     })
 
     it('recognizes comparisons', function(){

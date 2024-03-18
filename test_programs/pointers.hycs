@@ -17,3 +17,23 @@ var a: Int*** = &z;
 print_int(***a);
 print_int(x);
 # assert([5, 5])
+---
+# describe(simple function pointer)
+fun pow2(x: Int): Int {
+    x ** 2
+}
+var p = &pow2;
+print_int(pow2(4));
+print_int((*p)(4));
+# assert([16, 16])
+---
+# describe(function pointer args)
+fun call(x: ((Int) => Int)*, y: Int): Int {
+    (*x)(y)
+}
+fun pow3(x: Int): Int {
+    x ** 3
+}
+print_int(pow3(3));
+print_int(call(&pow3, 3));
+# assert([27, 27])

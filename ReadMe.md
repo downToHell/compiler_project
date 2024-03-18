@@ -81,7 +81,7 @@ So far the compiler implements the following language structures as defined by [
 - While loops
 - `break` and `continue`
 - Functions
-- Pointers (except for function pointers)
+- Pointers
 
 ### Special features
 

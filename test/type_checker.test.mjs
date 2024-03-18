@@ -5,6 +5,7 @@ import { TypeChecker } from '../src/type_checker.mjs'
 import { Bool, FunType, PtrType, Int, Unit } from '../src/types.mjs'
 
 export const IntPtr = new PtrType(Int, 1)
+export const SquareFnPtr = new PtrType(new FunType([Int], Int), 1)
 
 const typecheck = (src, callback) => {
     const scn = new Tokenizer(src)
@@ -85,6 +86,8 @@ describe('Typechecker tests', function(){
         assert.ok(typecheck('{ var a: Int = 3; var b: Int* = &a; *b }').is(Int))
         assert.ok(typecheck('{ var c: Int = 5; var d: Int* = &c; d }').is(IntPtr))
         assert.ok(typecheck('{ var e: Int = 7; var f: Int* = &e; var g: Int** = &f; *g }').is(IntPtr))
+        assert.ok(typecheck('{ fun square(x: Int): Int = x * x; var p: ((Int) => Int)* = &square }').is(SquareFnPtr))
+        assert.ok(typecheck('{ fun double(x: Int): Int = x * 2; var p: ((Int) => Int)* = &double; *p }') instanceof FunType)
     })
 
     it('rejects invalid type expression', function(){
@@ -105,11 +108,21 @@ describe('Typechecker tests', function(){
         assert.ok(typecheck('{ var x = 3; print_int(x) }').is(Unit))
     })
 
+    it('typechecks complex function calls', function(){
+        assert.ok(typecheckModule('{ fun f(): Int* { var x = 3; &x }; *f() }').is(Int))
+        assert.ok(typecheckModule('{ fun f(): Unit = print_int(8); var p = &f; (*p)() }').is(Unit))
+        assert.ok(typecheckModule('{ fun f(x: Int*): Int* { *x = *x + *x; x } var x = 3; *f(&x) }').is(Int))
+        assert.ok(typecheckModule('{ fun call(x: ((Int) => Unit)*, y: Int): Unit = (*x)(y); fun f(x: Int): Unit = print_int(x); call(&f, 10) }').is(Unit))
+    })
+
     it('rejects invalid function calls', function(){
         assert.throws(() => typecheck('print_int()'))
         assert.throws(() => typecheck('print_int(true)'))
         assert.throws(() => typecheck('print_bool(3)'))
         assert.throws(() => typecheck('print_int(while 3 < 5 do 3)'))
+        assert.throws(() => typecheck('{ fun f(x: Int*): Int* = x; var x = 3; -f(&x) }'))
+        assert.throws(() => typecheck('{ fun f(x: Int*): Int = *x; var x = 3; *f(&x) }'))
+        assert.throws(() => typecheck('{ fun call(x: ((Int) => Unit)*, y: Int): Unit = (*x)(y); fun square(x: Int): Int = x * x; call(&square, 3) }'))
     })
 
     it('typechecks simple function declarations', function(){

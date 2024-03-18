@@ -8,8 +8,7 @@ const JMP_TARGET_BEGIN = 'begin'
 
 function IRContext(_env){
     let env = _env || new SymTab()
-    const varUnit = new ir.IRVar('unit')
-    env.addIfAbsent('unit', varUnit)
+    env.addIfAbsent('unit', new ir.IRVar('unit'))
 
     let data = {}
     let funStack = []
@@ -27,6 +26,8 @@ function IRContext(_env){
     this.newLabel = (name) => new ir.Label(name ? name : `L${nextLabel++}`)
 
     this.beginFunction = (node) => {
+        const _var = this.newVar(node.ident.name)
+        _var.funLabel = true
         this.beginScope()
         const args = node.args.map(a => {
             const _var = this.newVar()
@@ -54,6 +55,8 @@ function IRContext(_env){
             }
         } else if (target instanceof ast.UnaryExpr){
             return this.resolve(target.right, refDepth+1)
+        } else if (target instanceof ast.Grouping){
+            return this.resolve(target.expr, refDepth)
         }
         throw new Error(`Invalid node type: ${target}`)
     }
@@ -291,7 +294,8 @@ function IRGenerator(_env){
     }
     this.visitCall = function(node){
         const _var = newVar()
-        emit(new ir.Call(node.target.name, node.args.map(a => visit(a)), _var))
+        const target = node.target instanceof ast.Identifier ? node.target.name : ctx.resolve(node.target)._var
+        emit(new ir.Call(target, node.args.map(a => visit(a)), _var))
         return _var
     }
     this.visitModule = function(node){
