@@ -148,10 +148,15 @@ export function Module(exprs, loc){
     this.toString = () => `${exprs.join(EOL)}`
 }
 
-export const encodeOp = (op) => {
+const encodeOp = (op) => {
     const encoded = {
         '-': TokenType.UNARY_MINUS,
         '*': TokenType.UNARY_STAR
     }
     return encoded[op] ? encoded[op] : op
 }
+const makeCall = (op, args, loc) => {
+    return new Call(new Identifier(op, loc.copy()), args, loc.copy())
+}
+
+export { encodeOp, makeCall }

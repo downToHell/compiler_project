@@ -62,9 +62,6 @@ function TCContext(_env){
 function TypeChecker(_env){
     const ctx = new TCContext(_env)
     
-    const makeCall = (op, args, loc) => {
-        return new ast.Call(new ast.Identifier(op, loc.copy()), args, loc.copy())
-    }
     const assignType = (node, type) => {
         node.__type__ = type
         return node
@@ -105,10 +102,12 @@ function TypeChecker(_env){
         throw new Error(`${node.loc}: Unknown literal type: ${node.value}`)
     }
     this.typeOfBinaryExpr = function(node){
-        return this.typeOfCall(makeCall(node.op, [node.left, node.right], node.loc))
+        const { __type__ } = this.typeOfCall(ast.makeCall(node.op, [node.left, node.right], node.loc))
+        return assignType(node, __type__)
     }
     this.typeOfUnaryExpr = function(node){
-        return this.typeOfCall(makeCall(ast.encodeOp(node.op), [node.right], node.loc))
+        const { __type__ } = this.typeOfCall(ast.makeCall(ast.encodeOp(node.op), [node.right], node.loc))
+        return assignType(node, __type__)
     }
     this.typeOfCall = function(node){
         const fun = this.typecheck(node.target).__type__

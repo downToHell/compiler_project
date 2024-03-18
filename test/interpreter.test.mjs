@@ -111,4 +111,17 @@ describe('Interpreter tests', function(){
         const value = interpret('{ fun even(q: Int): Bool { return if q % 2 == 0 then { true } else { false } }; even(5) }')
         assert.strictEqual(value, false)
     })
+
+    it('evaluates simple pointer expressions', function(){
+        let value = interpret('{ var x = 3; var y = &x; *y = 5; x }')
+        assert.strictEqual(value, 5)
+
+        value = interpret('{ var a = 10; var b = &a; var c = &b; **c = 8; *b }')
+        assert.strictEqual(value, 8)
+    })
+
+    it('evaluates function pointers', function(){
+        const value = interpret('{ fun square(x: Int): Int = x * x; var x = &square; (*x)(9) }')
+        assert.strictEqual(value, 81)
+    })
 })

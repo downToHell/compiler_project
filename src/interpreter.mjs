@@ -2,6 +2,9 @@ import * as ast from './ast.mjs'
 import { SymTab } from './symtab.mjs'
 import { TokenType } from './tokenizer.mjs'
 
+function Ref(_var){
+    this._var = _var
+}
 function Break(){}
 function Continue(){}
 function Return(value){
@@ -22,8 +25,25 @@ function Interpreter(_env){
     env.addIfAbsent(TokenType.LE, (a, b) => a <= b)
     env.addIfAbsent(TokenType.GT, (a, b) => a > b)
     env.addIfAbsent(TokenType.GE, (a, b) => a >= b)
+    env.addIfAbsent(TokenType.AMP, (a) => new Ref(a))
     env.addIfAbsent(TokenType.NOT, (a) => !a)
+    env.addIfAbsent(TokenType.UNARY_STAR, (a) => a._var)
     env.addIfAbsent(TokenType.UNARY_MINUS, (a) => -a)
+
+    const resolveRef = (a) => {
+        if (a instanceof ast.Identifier){
+            return a.name
+        } else if (a instanceof ast.UnaryExpr){
+            const op = ast.encodeOp(a.op)
+
+            if (op === TokenType.UNARY_STAR){
+                return env.getSymbol(op)(env.getSymbol(resolveRef(a.right)))
+            }
+        } else if (a instanceof ast.Grouping){
+            return resolveRef(a.expr)
+        }
+        throw new Error(`Illegal reference: ${a}`)
+    }
 
     this.interpret = function(node){
         switch(node.constructor){
@@ -43,7 +63,7 @@ function Interpreter(_env){
             case ast.Return: return this.evaluateReturnExpression(node)
             case ast.VarDecl: return this.evaluateVarDeclaration(node)
             case ast.Assignment: return this.evaluateAssignment(node)
-            case ast.TypeExpr: return this.interpret(node.expr) // TODO: typechecking?
+            case ast.TypeExpr: return this.interpret(node.expr)
             case ast.Module: return node.exprs.map(n => this.interpret(n))
             default: {
                 throw new Error(`Unknown ast node: ${node.constructor.name}`)
@@ -51,7 +71,7 @@ function Interpreter(_env){
         }
     }
     this.evaluateBinaryExpr = function(node){
-        return this.evaluateCall({ target: { name: node.op }, args: [node.left, node.right] })
+        return this.evaluateCall(ast.makeCall(node.op, [node.left, node.right], node.loc))
     }
     this.evaluateLogicalExpr = function(node){
         switch(node.op){
@@ -61,8 +81,14 @@ function Interpreter(_env){
         }
     }
     this.evaluateUnaryExpr = function(node){
-        const name = node.op === TokenType.MINUS ? TokenType.UNARY_MINUS : node.op
-        return this.evaluateCall({ target: { name }, args: [node.right] })
+        const op = ast.encodeOp(node.op)
+        
+        if (op === TokenType.AMP){
+            return env.getSymbol(node.op)(node.right.name)
+        } else if (op === TokenType.UNARY_STAR){
+            return env.getSymbol(resolveRef(node))
+        }
+        return this.evaluateCall(ast.makeCall(op, [node.right], node.loc))
     }
     this.evaluateBlock = function(node){
         env = new SymTab(env)
@@ -95,7 +121,7 @@ function Interpreter(_env){
         return null
     }
     this.evaluateCall = function(node){
-        const fn = env.getSymbol(node.target.name)
+        const fn = env.getSymbol(resolveRef(node.target))
 
         try {
             return fn(...node.args.map(f => this.interpret(f)))
@@ -130,7 +156,7 @@ function Interpreter(_env){
     }
     this.evaluateAssignment = function(node){
         const value = this.interpret(node.expr)
-        env.setSymbol(node.target.name, value)
+        env.setSymbol(resolveRef(node.target), value)
         return value
     }
 }
