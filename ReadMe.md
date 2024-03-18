@@ -6,7 +6,7 @@ This is my personal and somewhat painful implementation of the compiler project 
 - [Structure](#structure)
 - [Running the compiler](#running-the-compiler)
 - [Features](#features)
-- [End-To-End Test Framework](#end-to-end-test-framework)
+- [Test Framework](#test-framework)
 - [Known Issues](#known-issues)
 
 ## Installation
@@ -93,12 +93,46 @@ There are some special features in my language implementation that are not menti
 
 ### Design decisions
 
-- The short-hand syntax for functions inserts an implicit return right after the `=`-sign and parses anything but top-level blocks. So `fun square(x: Int): Int = { return x * x }` would be considered illegal and hence would not compile.
-- Return has been implemented as such that on a missing return expression at the end of a block it is automatically inserted by the parser at compile-time.
-- Accessing globals from a function is undefined behaviour: `var x = 3; fun print_x(): Unit { print_int(x) }`
-- Combinations of unary-`*` and `&` are not allowed, so this `&*p` cannot be used. The only legal semantic unit to follow an `&` is an identifier
+**Short-Hand Syntax**
+- The short-hand syntax for functions inserts an implicit return right after the `=`-sign and parses anything but top-level blocks. So `fun square(x: Int): Int = { return x * x }` would be considered illegal and hence would not compile
 
-## End-to-End Test Framework
+**Returns**
+- Return has been implemented as such that on a missing return expression at the end of a block it is automatically inserted by the parser at compile-time
+- Return from top-level code is not allowed, so `var x = 3; return` would not compile
+- There is a `unit`-Literal in the language eventhough it was dropped mid-course and it can be returned i.e. `return unit` works
+
+**Globals**
+- Accessing globals from a function is undefined behaviour: `var x = 3; fun print_x(): Unit { print_int(x) }`
+
+**Pointers**
+- Combinations of unary-`*` and `&` are not allowed, so this `&*p` cannot be used. The only legal semantic unit to follow an `&` is an identifier
+- Assigning function values is allowed. Example:
+```kotlin
+fun foo(): Int {
+    return 3;
+}
+
+fun ret(): (() => Int)* {
+    return &foo;
+}
+var ptr = *ret();
+print_int(ptr()) // prints 3
+```
+
+**Other**
+- The compiler does not insert any `print_int`'s or `print_bool`'s itself. All printing has to be done explicitly in code
+
+## Test Framework
+
+### Component tests
+
+To ensure that the components individually make sense and function correctly, I wrote several different types of tests. Specifically, I designed a wrapper library around `node:assert` called `tree_tester.mjs` which enables my compiler to test each branch of an AST node for various attributes. To run the component tests you can simply run:
+
+```sh
+npm run test # or npm test
+```
+
+### End-To-End Test Framework
 
 The e2e test framework in use here supports 4 kinds of commands: `describe`, `input`, `assert` and `fails`. While most of them are pretty self-explanatory, here a short note on each of them nonetheless:
 
@@ -125,11 +159,14 @@ print_int(read_int() * read_int())
 - `assert` and `fail` can only be used exclusively
 - the use of `input` is optional
 
+**Running the tests**
+
+To run the end-to-end test framework you can use the following command. Please note however, that the remote assembler _cannot_ be used with e2e tests. They only run on a local machine which is capable to understand x86_64 assembly!
+
+```sh
+npm run e2e
+```
+
 ## Known Issues
 
-- ~~Currently, the following function cannot be compiled because of the implicit returns:~~
-```
-fun square(x: Int): Int {
-    return x * x;
-}
-```
+- nothing here :) all fixed!!
