@@ -40,8 +40,7 @@ const typecheck = (node, options) => {
     return typechecker.typecheck(node)
 }
 const parseAndCheck = (source, options) => {
-    const module = parse(source, options)
-    return typecheck(module, { reset: options?.reset }) && module
+    return typecheck(parse(source, options), { reset: options?.reset })
 }
 const interpret = (source, options) => {
     if (options.reset) ipSym = ipSetup()
