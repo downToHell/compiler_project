@@ -5,7 +5,10 @@ import { basename } from 'path'
 import * as rl from 'readline-sync'
 import * as cs from './compiler_suite.mjs'
 
-const printResult = (res) => console.log(res === null || res === undefined ? 'unit' : res)
+const printResult = (res) => {
+    if (res === null || res === undefined) res = 'unit'
+    console.log(typeof res === 'object' ? res.toString() : res)
+}
 const compile = (code, run) => exec(code, (source) => process.stdout.write(cs.assemble(source, { run })))
 const repl = () => {
     while (true){

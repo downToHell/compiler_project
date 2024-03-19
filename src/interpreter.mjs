@@ -1,9 +1,14 @@
 import * as ast from './ast.mjs'
 import { SymTab } from './symtab.mjs'
+import { createHash } from 'node:crypto'
 import { TokenType } from './tokenizer.mjs'
 
 function Ref(_var){
     this._var = _var
+    this.toString = () => {
+        const digest = createHash('sha1').update(_var).digest().toString('hex').substring(0, 8)
+        return `0x${digest}`
+    }
 }
 function Break(){}
 function Continue(){}
